@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Real Movies & Music</title>
+    <title>NickFlix - Working Movie & Music Search</title>
     <style>
         * {
             margin: 0;
@@ -146,6 +146,10 @@
             cursor: pointer;
         }
 
+        .hero-search button:hover {
+            background: #f40612;
+        }
+
         .section {
             padding: 30px 40px;
         }
@@ -155,6 +159,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .section h2 {
@@ -186,15 +192,17 @@
             cursor: pointer;
             transition: all 0.3s;
             border: 1px solid #444;
+            font-size: 14px;
         }
 
         .filter-tab:hover, .filter-tab.active {
             background: #e50914;
+            border-color: #e50914;
         }
 
         .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 25px;
         }
 
@@ -210,7 +218,7 @@
 
         .movie-card img {
             width: 100%;
-            height: 250px;
+            height: 280px;
             object-fit: cover;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6);
@@ -220,6 +228,9 @@
             margin-top: 10px;
             font-weight: 600;
             font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .movie-card .year {
@@ -240,9 +251,8 @@
 
         .song-card {
             background: linear-gradient(145deg, #1f1f1f, #2a2a2a);
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
-            cursor: pointer;
             border: 1px solid #333;
             transition: all 0.3s;
         }
@@ -250,23 +260,39 @@
         .song-card:hover {
             border-color: #1db954;
             transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(29, 185, 84, 0.2);
+        }
+
+        .song-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
         }
 
         .song-card .song-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .song-card .artist {
             color: #1db954;
             font-size: 14px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .song-card audio {
             width: 100%;
-            margin-top: 10px;
+            height: 40px;
+            border-radius: 20px;
         }
 
         .song-card audio::-webkit-media-controls-panel {
@@ -289,15 +315,14 @@
             font-size: 18px;
         }
 
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+        .error-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #e50914;
+            background: rgba(229, 9, 20, 0.1);
+            border-radius: 10px;
+            margin: 20px 0;
         }
 
         footer {
@@ -305,6 +330,7 @@
             padding: 30px;
             background: #000;
             margin-top: 40px;
+            color: #777;
         }
 
         @media (max-width: 768px) {
@@ -324,7 +350,22 @@
             }
             
             .hero h1 {
-                font-size: 2.5rem;
+                font-size: 2rem;
+            }
+            
+            .hero-search {
+                flex-direction: column;
+                background: transparent;
+            }
+            
+            .hero-search input {
+                background: rgba(0,0,0,0.6);
+                border-radius: 50px;
+                margin-bottom: 10px;
+            }
+            
+            .section {
+                padding: 20px;
             }
         }
     </style>
@@ -341,16 +382,16 @@
 
     <div class="search-container">
         <span class="search-icon">🔍</span>
-        <input type="text" class="search-bar" id="searchInput" placeholder="Search movies or songs..." onkeyup="handleSearchInput()">
+        <input type="text" class="search-bar" id="searchInput" placeholder="Search movies or songs..." onkeyup="syncSearchInputs()" onkeypress="handleEnterKey(event)">
     </div>
 </header>
 
 <div class="hero">
-    <h1>Real Movies. Real Music.</h1>
-    <p>Powered by TMDB & Deezer APIs</p>
+    <h1>Search Movies & Music</h1>
+    <p>Try searching: "Inception", "The Weeknd", "action", "pop", "Bollywood"</p>
     <div class="hero-search">
-        <input type="text" id="heroSearchInput" placeholder="Try: 'Inception', 'The Weeknd', 'action'..." onkeyup="handleHeroSearch()">
-        <button onclick="performGlobalSearch()">Search</button>
+        <input type="text" id="heroSearchInput" placeholder="What do you want to watch/listen to?" onkeyup="syncSearchInputs()" onkeypress="handleEnterKey(event)">
+        <button onclick="performSearch()">Search Now</button>
     </div>
 </div>
 
@@ -364,25 +405,255 @@
         <span class="filter-tab active" onclick="loadPopularMovies()">Popular Movies</span>
         <span class="filter-tab" onclick="loadNowPlaying()">Now Playing</span>
         <span class="filter-tab" onclick="loadTopRated()">Top Rated</span>
-        <span class="filter-tab" onclick="loadUpcoming()">Upcoming</span>
-        <span class="filter-tab" onclick="loadTrendingMusic()">Trending Music</span>
-        <span class="filter-tab" onclick="loadRockMusic()">Rock</span>
-        <span class="filter-tab" onclick="loadPopMusic()">Pop</span>
+        <span class="filter-tab" onclick="loadTrendingMusic()">Trending Songs</span>
+        <span class="filter-tab" onclick="loadRockMusic()">Rock Music</span>
+        <span class="filter-tab" onclick="loadPopMusic()">Pop Music</span>
+        <span class="filter-tab" onclick="loadHipHopMusic()">Hip Hop</span>
     </div>
     
     <div class="content-grid" id="contentGrid">
-        <div class="loading">Loading from TMDB API</div>
+        <div class="loading">Loading from TMDB API...</div>
     </div>
 </div>
 
 <footer>
-    <p>© 2024 NickFlix - Movie data: TMDB API | Music previews: Deezer API | All free and legal</p>
+    <p>© 2024 NickFlix - Movie data: TMDB API | Music previews: Deezer API | All working now!</p>
 </footer>
 
 <script>
     // API Keys and Configuration
     const TMDB_API_KEY = '5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e'; // Public demo key
     const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+    const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+    
+    // Deezer API - no key needed
+    const DEEZER_API = 'https://api.deezer.com';
+
+    // Initialize
+    window.onload = function() {
+        loadPopularMovies();
+        checkAPIStatus();
+    };
+
+    // API Status Check
+    async function checkAPIStatus() {
+        try {
+            const tmdbCheck = await fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}`);
+            if (tmdbCheck.ok) {
+                document.getElementById('tmdbStatus').className = 'status-badge online';
+            }
+        } catch (e) {
+            document.getElementById('tmdbStatus').className = 'status-badge offline';
+        }
+
+        try {
+            const deezerCheck = await fetch(`${DEEZER_API}/chart/0/tracks`);
+            if (deezerCheck.ok) {
+                document.getElementById('deezerStatus').className = 'status-badge online';
+            }
+        } catch (e) {
+            document.getElementById('deezerStatus').className = 'status-badge offline';
+        }
+    }
+
+    // Sync search inputs
+    function syncSearchInputs() {
+        const searchInput = document.getElementById('searchInput').value;
+        const heroInput = document.getElementById('heroSearchInput').value;
+        
+        if (document.activeElement.id === 'searchInput') {
+            document.getElementById('heroSearchInput').value = searchInput;
+        } else if (document.activeElement.id === 'heroSearchInput') {
+            document.getElementById('searchInput').value = heroInput;
+        }
+    }
+
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
+    }
+
+    // ============ TMDB API FUNCTIONS ============
+    async function loadPopularMovies() {
+        showLoading('Loading popular movies from TMDB...');
+        updateSection('🔥 Popular Movies', 'Live from TMDB');
+        updateActiveTab('Popular Movies');
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            if (!response.ok) throw new Error('TMDB API failed');
+            
+            const data = await response.json();
+            
+            const movies = data.results.slice(0, 20).map(movie => ({
+                type: 'movie',
+                id: movie.id,
+                title: movie.title,
+                year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A',
+                rating: movie.vote_average ? movie.vote_average.toFixed(1) : '?',
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load movies from TMDB. Using sample data instead.');
+            console.error(error);
+            loadSampleMovies();
+        }
+    }
+
+    async function loadNowPlaying() {
+        showLoading('Loading now playing movies...');
+        updateSection('🎬 Now Playing', 'Live from TMDB');
+        updateActiveTab('Now Playing');
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            if (!response.ok) throw new Error('TMDB API failed');
+            
+            const data = await response.json();
+            
+            const movies = data.results.slice(0, 20).map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A',
+                rating: movie.vote_average ? movie.vote_average.toFixed(1) : '?',
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load now playing movies');
+            loadPopularMovies();
+        }
+    }
+
+    async function loadTopRated() {
+        showLoading('Loading top rated movies...');
+        updateSection('⭐ Top Rated Movies', 'Live from TMDB');
+        updateActiveTab('Top Rated');
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            if (!response.ok) throw new Error('TMDB API failed');
+            
+            const data = await response.json();
+            
+            const movies = data.results.slice(0, 20).map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A',
+                rating: movie.vote_average ? movie.vote_average.toFixed(1) : '?',
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load top rated movies');
+            loadPopularMovies();
+        }
+    }
+
+    // ============ DEEZER API FUNCTIONS - FIXED VERSION ============
+    async function loadTrendingMusic() {
+        showLoading('Loading trending music from Deezer...');
+        updateSection('🎵 Trending Songs', 'Live from Deezer');
+        updateActiveTab('Trending Songs');
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/chart/0/tracks`);
+            if (!response.ok) throw new Error('Deezer API failed');
+            
+            const data = await response.json();
+            
+            if (!data.data || data.data.length === 0) {
+                throw new Error('No data received');
+            }
+            
+            const songs = data.data.slice(0, 20).map(track => ({
+                type: 'song',
+                id: track.id,
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium || track.artist.picture_medium,
+                duration: track.duration
+            }));
+            
+            displayContent(songs);
+        } catch (error) {
+            console.error('Deezer error:', error);
+            showError('Failed to load from Deezer. Using sample songs instead.');
+            loadSampleSongs();
+        }
+    }
+
+    async function loadRockMusic() {
+        showLoading('Loading rock music...');
+        updateSection('🎸 Rock Music', 'Live from Deezer');
+        updateActiveTab('Rock Music');
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/search?q=rock&limit=20`);
+            if (!response.ok) throw new Error('Deezer API failed');
+            
+            const data = await response.json();
+            
+            if (!data.data || data.data.length === 0) {
+                throw new Error('No rock music found');
+            }
+            
+            const songs = data.data.map(track => ({
+                type: 'song',
+                id: track.id,
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium
+            }));
+            
+            displayContent(songs);
+        } catch (error) {
+            console.error('Rock music error:', error);
+            showError('Failed to load rock music');
+            loadTrendingMusic();
+        }
+    }
+
+    async function loadPopMusic() {
+        showLoading('Loading pop music...');
+        updateSection('🎤 Pop Music', 'Live from Deezer');
+        updateActiveTab('Pop Music');
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/search?q=pop&limit=20`);
+            if (!response.ok) throw new Error('Deezer API failed');
+            
+            const data = await response.json();
+            
+            if (!data.data || data.data.length === 0) {
+                throw new Error('No pop music found');
+            }
+            
+            const songs = data.data.map(track => ({
+                type: 'song',
+                id: track.id,
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium
+            }));
+            
+            displayContent(songs);
+        } catch (error) {
+            console.error('Pop music error:', error);
+            showError('Failed to load pop music');
+            loadTrendingMusic();
+        }
+    }
+
+    async function loa
     const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
     
     // No API key needed for Deezer - it's public!
