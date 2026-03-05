@@ -3,25 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Multi-Framework App (React + Vue + Angular)</title>
-    
-    <!-- Framework CDNs -->
-    <!-- React -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Vue -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- Angular (using the core and platform-browser) -->
-    <script src="https://unpkg.com/@angular/core@17.0.0/bundles/core.umd.js"></script>
-    <script src="https://unpkg.com/@angular/common@17.0.0/bundles/common.umd.js"></script>
-    <script src="https://unpkg.com/@angular/compiler@17.0.0/bundles/compiler.umd.js"></script>
-    <script src="https://unpkg.com/@angular/platform-browser@17.0.0/bundles/platform-browser.umd.js"></script>
-    <script src="https://unpkg.com/@angular/platform-browser-dynamic@17.0.0/bundles/platform-browser-dynamic.umd.js"></script>
-    <!-- RxJS (needed for Angular) -->
-    <script src="https://unpkg.com/rxjs@7.8.0/dist/bundles/rxjs.umd.min.js"></script>
-    <script src="https://unpkg.com/zone.js@0.14.0/dist/zone.js"></script>
-
+    <title>NickFlix - Full Stack</title>
     <style>
+        /* (Keep your existing styles) */
         * {
             margin: 0;
             padding: 0;
@@ -29,12 +13,11 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: #141414;
             color: white;
         }
 
-        /* Header */
         header {
             display: flex;
             justify-content: space-between;
@@ -44,8 +27,6 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            flex-wrap: wrap;
-            gap: 15px;
         }
 
         .logo {
@@ -55,23 +36,56 @@
             cursor: pointer;
         }
 
+        .nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+
+        .nav a:hover {
+            background: #e50914;
+        }
+
         .search-bar {
-            padding: 12px 20px;
+            padding: 10px 20px;
             border: none;
             border-radius: 25px;
             background: rgba(255,255,255,0.15);
             color: white;
-            font-size: 16px;
             width: 300px;
         }
 
-        .search-bar:focus {
-            outline: none;
-            background: rgba(255,255,255,0.25);
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
         }
 
-        /* Hero Section - React */
-        #react-hero {
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #e50914;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #333;
+            color: white;
+        }
+
+        .hero {
             height: 400px;
             background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                         url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920') center/cover;
@@ -79,12 +93,10 @@
             flex-direction: column;
             justify-content: center;
             padding: 0 60px;
-            margin-bottom: 30px;
         }
 
-        /* Content Sections */
         .content-section {
-            padding: 20px 40px;
+            padding: 30px 40px;
         }
 
         .section-title {
@@ -94,16 +106,16 @@
             padding-left: 15px;
         }
 
-        /* Vue Movies Grid */
         .movies-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
         }
 
         .movie-card {
             cursor: pointer;
             transition: transform 0.3s;
+            position: relative;
         }
 
         .movie-card:hover {
@@ -112,7 +124,7 @@
 
         .movie-card img {
             width: 100%;
-            height: 250px;
+            height: 280px;
             object-fit: cover;
             border-radius: 10px;
         }
@@ -122,71 +134,64 @@
             font-weight: 600;
         }
 
-        .movie-card .year {
-            color: #aaa;
-            font-size: 13px;
-        }
-
-        /* Angular Songs Grid */
-        .songs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .song-card {
-            background: #1f1f1f;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #333;
-        }
-
-        .song-card .song-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .song-card .artist {
-            color: #1db954;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .song-card audio {
-            width: 100%;
-            height: 40px;
-        }
-
-        /* Framework Tabs */
-        .framework-tabs {
-            display: flex;
-            gap: 10px;
-            padding: 20px 40px;
-            flex-wrap: wrap;
-        }
-
-        .framework-tab {
-            padding: 10px 25px;
-            border-radius: 25px;
-            border: 2px solid;
-            font-weight: bold;
+        .watchlist-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e50914;
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
             cursor: pointer;
-            transition: 0.3s;
+            display: none;
         }
 
-        .framework-tab:hover {
-            transform: translateY(-2px);
+        .movie-card:hover .watchlist-btn {
+            display: block;
         }
 
-        .framework-tab.react { border-color: #61dafb; color: #61dafb; }
-        .framework-tab.vue { border-color: #42b883; color: #42b883; }
-        .framework-tab.angular { border-color: #dd0031; color: #dd0031; }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .framework-tab.active {
-            background: currentColor;
-            color: #141414;
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1f1f1f;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
         }
 
         footer {
@@ -200,105 +205,385 @@
 </head>
 <body>
 
-<!-- Header (Vanilla JS) -->
 <header>
-    <div class="logo" onclick="window.location.reload()">NICKFLIX</div>
-    <input type="text" class="search-bar" id="globalSearch" placeholder="Search across all frameworks..." onkeyup="handleGlobalSearch(this.value)">
+    <div class="logo" onclick="loadHome()">NICKFLIX</div>
+    <div class="nav">
+        <a href="#" onclick="loadMovies()">Movies</a>
+        <a href="#" onclick="loadMusic()">Music</a>
+        <a href="#" onclick="loadWatchlist()">My Watchlist</a>
+        <input type="text" class="search-bar" id="searchInput" placeholder="Search movies..." onkeyup="handleSearch(event)">
+        <div class="auth-buttons" id="authButtons">
+            <button class="btn btn-primary" onclick="showLoginModal()">Login</button>
+            <button class="btn btn-secondary" onclick="showRegisterModal()">Register</button>
+        </div>
+        <div class="user-menu" id="userMenu" style="display: none;">
+            <span id="username"></span>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+    </div>
 </header>
 
-<!-- Framework Tabs -->
-<div class="framework-tabs">
-    <span class="framework-tab react active" onclick="switchFramework('react')">⚛️ React Section</span>
-    <span class="framework-tab vue" onclick="switchFramework('vue')">🟢 Vue Section</span>
-    <span class="framework-tab angular" onclick="switchFramework('angular')">🔴 Angular Section</span>
+<div class="hero">
+    <h1 id="heroTitle">Welcome to NickFlix</h1>
+    <p id="heroSubtitle">Millions of movies, TV shows, and songs. Discover now.</p>
 </div>
 
-<!-- REACT SECTION (Hero + Movie Slider) -->
-<div id="react-section" style="display: block;">
-    <div id="react-hero"></div>
-    <div class="content-section">
-        <h2 class="section-title">🔥 React: Trending Movies</h2>
-        <div id="react-movies"></div>
+<div class="content-section" id="mainContent">
+    <h2 class="section-title" id="contentTitle">🔥 Popular Movies</h2>
+    <div class="movies-grid" id="contentGrid"></div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 20px;">Login</h2>
+        <input type="text" id="loginUsername" placeholder="Username or Email">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button class="btn btn-primary" onclick="login()">Login</button>
+        <button class="btn btn-secondary" onclick="closeModal('loginModal')">Cancel</button>
     </div>
 </div>
 
-<!-- VUE SECTION (Movies Grid) -->
-<div id="vue-section" style="display: none;">
-    <div class="content-section">
-        <h2 class="section-title">🟢 Vue: Popular Movies</h2>
-        <div id="vue-movies"></div>
-    </div>
-</div>
-
-<!-- ANGULAR SECTION (Songs Player) -->
-<div id="angular-section" style="display: none;">
-    <div class="content-section">
-        <h2 class="section-title">🔴 Angular: Music Player</h2>
-        <div id="angular-songs"></div>
+<!-- Register Modal -->
+<div class="modal" id="registerModal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 20px;">Register</h2>
+        <input type="text" id="regUsername" placeholder="Username">
+        <input type="email" id="regEmail" placeholder="Email">
+        <input type="password" id="regPassword" placeholder="Password">
+        <button class="btn btn-primary" onclick="register()">Register</button>
+        <button class="btn btn-secondary" onclick="closeModal('registerModal')">Cancel</button>
     </div>
 </div>
 
 <footer>
-    <p>© 2024 NickFlix - Built with React, Vue, and Angular simultaneously</p>
+    <p>© 2024 NickFlix - Full Stack Application (Frontend UI + Backend Logic + Database + APIs)</p>
 </footer>
 
-<!-- ============ REACT COMPONENTS ============ -->
 <script>
-    // React Components
-    const { useState, useEffect } = React;
+    // ============ STATE MANAGEMENT ============
+    let currentUser = null;
+    let token = localStorage.getItem('token');
 
-    // Hero Component
-    const Hero = () => {
-        const [featuredMovie, setFeaturedMovie] = useState('Inception');
-        
-        return React.createElement('div', { style: { height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' } },
-            React.createElement('h1', { style: { fontSize: '3.5rem', marginBottom: '15px' } }, '🎬 React Hero'),
-            React.createElement('p', { style: { fontSize: '1.2rem', marginBottom: '20px', color: '#e5e5e5' } }, 
-                `Featured: ${featuredMovie}`
-            ),
-            React.createElement('button', {
-                style: { background: '#e50914', color: 'white', border: 'none', padding: '12px 30px', borderRadius: '5px', fontSize: '16px', cursor: 'pointer', width: '200px' },
-                onClick: () => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(featuredMovie + ' trailer'), '_blank')
-            }, '▶ Watch Trailer')
-        );
-    };
+    // ============ API BASE URL ============
+    const API_BASE = 'http://localhost:3000/api';
 
-    // Movies Component
-    const MoviesList = () => {
-        const [movies, setMovies] = useState([]);
-        const [loading, setLoading] = useState(true);
+    // ============ AUTHENTICATION ============
+    function showLoginModal() {
+        document.getElementById('loginModal').classList.add('active');
+    }
 
-        useEffect(() => {
-            fetch('https://api.themoviedb.org/3/movie/popular?api_key=5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e')
-                .then(res => res.json())
-                .then(data => {
-                    setMovies(data.results.slice(0, 10));
-                    setLoading(false);
+    function showRegisterModal() {
+        document.getElementById('registerModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    async function register() {
+        const username = document.getElementById('regUsername').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+
+        try {
+            const response = await fetch(`${API_BASE}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                token = data.token;
+                currentUser = data.user;
+                localStorage.setItem('token', token);
+                updateUIForUser();
+                closeModal('registerModal');
+                loadWatchlist();
+            } else {
+                alert('Registration failed: ' + data.error);
+            }
+        } catch (error) {
+            alert('Registration failed');
+        }
+    }
+
+    async function login() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const response = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                token = data.token;
+                currentUser = data.user;
+                localStorage.setItem('token', token);
+                updateUIForUser();
+                closeModal('loginModal');
+                loadWatchlist();
+            } else {
+                alert('Login failed: ' + data.error);
+            }
+        } catch (error) {
+            alert('Login failed');
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        token = null;
+        localStorage.removeItem('token');
+        updateUIForLoggedOut();
+        loadMovies();
+    }
+
+    function updateUIForUser() {
+        document.getElementById('authButtons').style.display = 'none';
+        document.getElementById('userMenu').style.display = 'block';
+        document.getElementById('username').textContent = currentUser.username;
+    }
+
+    function updateUIForLoggedOut() {
+        document.getElementById('authButtons').style.display = 'flex';
+        document.getElementById('userMenu').style.display = 'none';
+    }
+
+    // Check for existing token
+    if (token) {
+        // Verify token (simplified)
+        currentUser = { username: 'User' }; // In real app, verify with backend
+        updateUIForUser();
+    }
+
+    // ============ MOVIE FUNCTIONS ============
+    async function loadMovies() {
+        document.getElementById('heroTitle').textContent = 'Movies';
+        document.getElementById('heroSubtitle').textContent = 'Browse thousands of movies';
+        document.getElementById('contentTitle').textContent = '🎬 Popular Movies';
+
+        try {
+            const response = await fetch(`${API_BASE}/movies/popular`);
+            const data = await response.json();
+
+            displayMovies(data.results);
+        } catch (error) {
+            console.error('Failed to load movies:', error);
+        }
+    }
+
+    async function searchMovies(query) {
+        try {
+            const response = await fetch(`${API_BASE}/movies/search?query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            document.getElementById('contentTitle').textContent = `🔍 Search: "${query}"`;
+            displayMovies(data.results);
+
+            // Save search history if logged in
+            if (currentUser && token) {
+                await fetch(`${API_BASE}/search/history`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ search_term: query })
                 });
-        }, []);
+            }
+        } catch (error) {
+            console.error('Search failed:', error);
+        }
+    }
 
-        if (loading) return React.createElement('div', { style: { color: '#e50914' } }, 'Loading React movies...');
+    function displayMovies(movies) {
+        const grid = document.getElementById('contentGrid');
+        
+        let html = '';
+        movies.slice(0, 20).forEach(movie => {
+            html += `
+                <div class="movie-card" onclick="showMovieDetails(${movie.id})">
+                    <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">
+                    <div class="title">${movie.title}</div>
+                    <div class="year">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</div>
+                    ${currentUser ? `
+                        <button class="watchlist-btn" onclick="addToWatchlist(${movie.id}, '${movie.title.replace(/'/g, "\\'")}'); event.stopPropagation();">+</button>
+                    ` : ''}
+                </div>
+            `;
+        });
 
-        return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' } },
-            movies.map(movie => 
-                React.createElement('div', {
-                    key: movie.id,
-                    className: 'movie-card',
-                    onClick: () => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(movie.title + ' trailer'), '_blank'),
-                    style: { cursor: 'pointer' }
+        grid.innerHTML = html;
+    }
+
+    // ============ WATCHLIST FUNCTIONS ============
+    async function loadWatchlist() {
+        if (!currentUser || !token) {
+            alert('Please login to view your watchlist');
+            return;
+        }
+
+        document.getElementById('heroTitle').textContent = 'My Watchlist';
+        document.getElementById('heroSubtitle').textContent = 'Movies you want to watch';
+        document.getElementById('contentTitle').textContent = '📋 Your Watchlist';
+
+        try {
+            const response = await fetch(`${API_BASE}/watchlist`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const watchlist = await response.json();
+            displayWatchlist(watchlist);
+        } catch (error) {
+            console.error('Failed to load watchlist:', error);
+        }
+    }
+
+    function displayWatchlist(watchlist) {
+        const grid = document.getElementById('contentGrid');
+        
+        if (watchlist.length === 0) {
+            grid.innerHTML = '<div style="text-align: center; padding: 60px; color: #aaa;">Your watchlist is empty. Add some movies!</div>';
+            return;
+        }
+
+        let html = '';
+        watchlist.forEach(item => {
+            html += `
+                <div class="movie-card">
+                    <div style="width:100%; height:280px; background:#333; display:flex; align-items:center; justify-content:center; border-radius:10px;">
+                        🎬
+                    </div>
+                    <div class="title">${item.movie_title}</div>
+                    <button class="btn btn-secondary" style="margin-top:10px;" onclick="removeFromWatchlist(${item.id})">Remove</button>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    async function addToWatchlist(movieId, movieTitle) {
+        if (!currentUser || !token) {
+            alert('Please login to add to watchlist');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/watchlist`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                    React.createElement('img', { src: `https://image.tmdb.org/t/p/w500${movie.poster_path}`, alt: movie.title, style: { width: '100%', height: '250px', objectFit: 'cover', borderRadius: '10px' } }),
-                    React.createElement('div', { className: 'title' }, movie.title),
-                    React.createElement('div', { className: 'year' }, movie.release_date ? movie.release_date.split('-')[0] : 'N/A')
-                )
-            )
-        );
-    };
+                body: JSON.stringify({ movie_id: movieId, movie_title: movieTitle })
+            });
 
-    // Render React
-    window.addEventListener('load', () => {
-        const heroRoot = document.getElementById('react-hero');
-        ReactDOM.createRoot(heroRoot).render(React.createElement(Hero));
+            const data = await response.json();
+            alert(data.message);
+        } catch (error) {
+            alert('Failed to add to watchlist');
+        }
+    }
+
+    async function removeFromWatchlist(id) {
+        try {
+            await fetch(`${API_BASE}/watchlist/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            loadWatchlist(); // Refresh
+        } catch (error) {
+            alert('Failed to remove');
+        }
+    }
+
+    // ============ SEARCH ============
+    function handleSearch(event) {
+        if (event.key === 'Enter') {
+            const query = event.target.value.trim();
+            if (query) {
+                searchMovies(query);
+            }
+        }
+    }
+
+    // ============ MOVIE DETAILS ============
+    async function showMovieDetails(movieId) {
+        try {
+            const response = await fetch(`${API_BASE}/movies/${movieId}`);
+            const movie = await response.json();
+
+            // Get trailer
+            const trailerResponse = await fetch(`${API_BASE}/trailer/${encodeURIComponent(movie.title)}`);
+            const trailer = await trailerResponse.json();
+
+            if (trailer.fallback) {
+                window.open(trailer.url, '_blank');
+            } else if (trailer.items && trailer.items[0]) {
+                window.open(`https://www.youtube.com/watch?v=${trailer.items[0].id.videoId}`, '_blank');
+            }
+        } catch (error) {
+            console.error('Failed to load movie details:', error);
+        }
+    }
+
+    // ============ MUSIC FUNCTIONS ============
+    async function loadMusic() {
+        document.getElementById('heroTitle').textContent = 'Music';
+        document.getElementById('heroSubtitle').textContent = 'Listen to trending songs';
+        document.getElementById('contentTitle').textContent = '🎵 Trending Music';
+
+        try {
+            const response = await fetch(`${API_BASE}/music/trending`);
+            const data = await response.json();
+
+            displayMusic(data.data);
+        } catch (error) {
+            console.error('Failed to load music:', error);
+        }
+    }
+
+    function displayMusic(tracks) {
+        const grid = document.getElementById('contentGrid');
+        
+        let html = '';
+        tracks.slice(0, 20).forEach(track => {
+            html += `
+                <div class="movie-card">
+                    <img src="${track.album.cover_medium}" alt="${track.title}">
+                    <div class="title">${track.title}</div>
+                    <div class="year">${track.artist.name}</div>
+                    <audio controls style="width:100%; margin-top:10px;">
+                        <source src="${track.preview}" type="audio/mpeg">
+                    </audio>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    // ============ HOME ============
+    function loadHome() {
+        document.getElementById('heroTitle').textContent = 'Welcome to NickFlix';
+        document.getElementById('heroSubtitle').textContent = 'Millions of movies, TV shows, and songs. Discover now.';
+        loadMovies();
+    }
+
+    // ============ INITIAL LOAD ============
+    window.onload = loadMovies;
+</script>
+</body>
+</html>oot(heroRoot).render(React.createElement(Hero));
 
         const moviesRoot = document.getElementById('react-movies');
         ReactDOM.createRoot(moviesRoot).render(React.createElement(MoviesList));
