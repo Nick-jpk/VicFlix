@@ -3,7 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Movies & Music + Framework Tutorial</title>
+    <title>NickFlix - Multi-Framework App (React + Vue + Angular)</title>
+    
+    <!-- Framework CDNs -->
+    <!-- React -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Vue -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Angular (using the core and platform-browser) -->
+    <script src="https://unpkg.com/@angular/core@17.0.0/bundles/core.umd.js"></script>
+    <script src="https://unpkg.com/@angular/common@17.0.0/bundles/common.umd.js"></script>
+    <script src="https://unpkg.com/@angular/compiler@17.0.0/bundles/compiler.umd.js"></script>
+    <script src="https://unpkg.com/@angular/platform-browser@17.0.0/bundles/platform-browser.umd.js"></script>
+    <script src="https://unpkg.com/@angular/platform-browser-dynamic@17.0.0/bundles/platform-browser-dynamic.umd.js"></script>
+    <!-- RxJS (needed for Angular) -->
+    <script src="https://unpkg.com/rxjs@7.8.0/dist/bundles/rxjs.umd.min.js"></script>
+    <script src="https://unpkg.com/zone.js@0.14.0/dist/zone.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -15,15 +32,15 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #141414;
             color: white;
-            line-height: 1.6;
         }
 
+        /* Header */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 40px;
-            background: linear-gradient(to bottom, #000 0%, #141414 100%);
+            background: #000;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -35,67 +52,27 @@
             font-size: 32px;
             color: #e50914;
             font-weight: bold;
-            letter-spacing: 1px;
             cursor: pointer;
         }
 
-        .api-status {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-badge.online {
-            background: #1db954;
-            color: white;
-        }
-
-        .status-badge.offline {
-            background: #e50914;
-            color: white;
-        }
-
-        .search-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            min-width: 400px;
-        }
-
         .search-bar {
-            padding: 12px 20px 12px 45px;
+            padding: 12px 20px;
             border: none;
             border-radius: 25px;
             background: rgba(255,255,255,0.15);
             color: white;
             font-size: 16px;
-            width: 100%;
-            transition: all 0.3s;
-            border: 1px solid #444;
+            width: 300px;
         }
 
         .search-bar:focus {
             outline: none;
             background: rgba(255,255,255,0.25);
-            border-color: #e50914;
         }
 
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            color: #888;
-            font-size: 18px;
-        }
-
-        .hero {
-            height: 450px;
+        /* Hero Section - React */
+        #react-hero {
+            height: 400px;
             background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                         url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920') center/cover;
             display: flex;
@@ -105,111 +82,28 @@
             margin-bottom: 30px;
         }
 
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 15px;
+        /* Content Sections */
+        .content-section {
+            padding: 20px 40px;
         }
 
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 25px;
-            color: #e5e5e5;
-        }
-
-        .hero-search {
-            display: flex;
-            max-width: 600px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50px;
-            padding: 5px;
-            border: 1px solid #444;
-        }
-
-        .hero-search input {
-            flex: 1;
-            padding: 15px 25px;
-            border: none;
-            background: transparent;
-            color: white;
-            font-size: 18px;
-            outline: none;
-        }
-
-        .hero-search button {
-            padding: 12px 30px;
-            border-radius: 50px;
-            background: #e50914;
-            color: white;
-            border: none;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .hero-search button:hover {
-            background: #f40612;
-        }
-
-        .section {
-            padding: 30px 40px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .section-title {
+            font-size: 24px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .section h2 {
-            font-size: 28px;
             border-left: 5px solid #e50914;
             padding-left: 15px;
         }
 
-        .api-source {
-            color: #1db954;
-            font-size: 14px;
-            background: rgba(29, 185, 84, 0.2);
-            padding: 5px 12px;
-            border-radius: 20px;
-        }
-
-        .filter-tabs {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .filter-tab {
-            padding: 8px 20px;
-            border-radius: 25px;
-            background: #2a2a2a;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px solid #444;
-            font-size: 14px;
-        }
-
-        .filter-tab:hover, .filter-tab.active {
-            background: #e50914;
-            border-color: #e50914;
-        }
-
-        .content-grid {
+        /* Vue Movies Grid */
+        .movies-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
         }
 
         .movie-card {
             cursor: pointer;
             transition: transform 0.3s;
-            position: relative;
         }
 
         .movie-card:hover {
@@ -218,19 +112,14 @@
 
         .movie-card img {
             width: 100%;
-            height: 280px;
+            height: 250px;
             object-fit: cover;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
 
         .movie-card .title {
             margin-top: 10px;
             font-weight: 600;
-            font-size: 15px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .movie-card .year {
@@ -238,162 +127,345 @@
             font-size: 13px;
         }
 
-        .movie-card .rating {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            color: #ffd700;
+        /* Angular Songs Grid */
+        .songs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
         }
 
         .song-card {
-            background: linear-gradient(145deg, #1f1f1f, #2a2a2a);
+            background: #1f1f1f;
             padding: 15px;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid #333;
-            transition: all 0.3s;
-        }
-
-        .song-card:hover {
-            border-color: #1db954;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(29, 185, 84, 0.2);
-        }
-
-        .song-card img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 12px;
         }
 
         .song-card .song-title {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .song-card .artist {
             color: #1db954;
             font-size: 14px;
-            margin-bottom: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-bottom: 10px;
         }
 
         .song-card audio {
             width: 100%;
             height: 40px;
-            border-radius: 20px;
         }
 
-        .tutorial-section {
-            background: #1a1a1a;
-            border-radius: 15px;
-            padding: 30px;
-            margin: 40px;
-            border: 1px solid #333;
-        }
-
-        .tutorial-title {
-            color: #e50914;
-            font-size: 32px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
+        /* Framework Tabs */
         .framework-tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 30px;
+            padding: 20px 40px;
             flex-wrap: wrap;
-            justify-content: center;
         }
 
         .framework-tab {
-            padding: 12px 25px;
-            border-radius: 30px;
-            background: #2a2a2a;
-            color: white;
-            cursor: pointer;
+            padding: 10px 25px;
+            border-radius: 25px;
+            border: 2px solid;
             font-weight: bold;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        .framework-tab.react { border-color: #61dafb; }
-        .framework-tab.vue { border-color: #42b883; }
-        .framework-tab.angular { border-color: #dd0031; }
-        .framework-tab.lifecycle { border-color: #ffd700; }
-        .framework-tab.rendering { border-color: #e50914; }
-
-        .framework-tab:hover, .framework-tab.active {
-            background: #3a3a3a;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        .framework-tab:hover {
+            transform: translateY(-2px);
         }
 
-        .framework-content {
-            display: none;
-            background: #222;
-            border-radius: 15px;
-            padding: 25px;
-            border-left: 5px solid;
+        .framework-tab.react { border-color: #61dafb; color: #61dafb; }
+        .framework-tab.vue { border-color: #42b883; color: #42b883; }
+        .framework-tab.angular { border-color: #dd0031; color: #dd0031; }
+
+        .framework-tab.active {
+            background: currentColor;
+            color: #141414;
         }
 
-        .framework-content.react { border-left-color: #61dafb; }
-        .framework-content.vue { border-left-color: #42b883; }
-        .framework-content.angular { border-left-color: #dd0031; }
-        .framework-content.lifecycle { border-left-color: #ffd700; }
-        .framework-content.rendering { border-left-color: #e50914; }
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #000;
+            margin-top: 40px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
 
-        .framework-content.active {
-            display: block;
+<!-- Header (Vanilla JS) -->
+<header>
+    <div class="logo" onclick="window.location.reload()">NICKFLIX</div>
+    <input type="text" class="search-bar" id="globalSearch" placeholder="Search across all frameworks..." onkeyup="handleGlobalSearch(this.value)">
+</header>
+
+<!-- Framework Tabs -->
+<div class="framework-tabs">
+    <span class="framework-tab react active" onclick="switchFramework('react')">⚛️ React Section</span>
+    <span class="framework-tab vue" onclick="switchFramework('vue')">🟢 Vue Section</span>
+    <span class="framework-tab angular" onclick="switchFramework('angular')">🔴 Angular Section</span>
+</div>
+
+<!-- REACT SECTION (Hero + Movie Slider) -->
+<div id="react-section" style="display: block;">
+    <div id="react-hero"></div>
+    <div class="content-section">
+        <h2 class="section-title">🔥 React: Trending Movies</h2>
+        <div id="react-movies"></div>
+    </div>
+</div>
+
+<!-- VUE SECTION (Movies Grid) -->
+<div id="vue-section" style="display: none;">
+    <div class="content-section">
+        <h2 class="section-title">🟢 Vue: Popular Movies</h2>
+        <div id="vue-movies"></div>
+    </div>
+</div>
+
+<!-- ANGULAR SECTION (Songs Player) -->
+<div id="angular-section" style="display: none;">
+    <div class="content-section">
+        <h2 class="section-title">🔴 Angular: Music Player</h2>
+        <div id="angular-songs"></div>
+    </div>
+</div>
+
+<footer>
+    <p>© 2024 NickFlix - Built with React, Vue, and Angular simultaneously</p>
+</footer>
+
+<!-- ============ REACT COMPONENTS ============ -->
+<script>
+    // React Components
+    const { useState, useEffect } = React;
+
+    // Hero Component
+    const Hero = () => {
+        const [featuredMovie, setFeaturedMovie] = useState('Inception');
+        
+        return React.createElement('div', { style: { height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' } },
+            React.createElement('h1', { style: { fontSize: '3.5rem', marginBottom: '15px' } }, '🎬 React Hero'),
+            React.createElement('p', { style: { fontSize: '1.2rem', marginBottom: '20px', color: '#e5e5e5' } }, 
+                `Featured: ${featuredMovie}`
+            ),
+            React.createElement('button', {
+                style: { background: '#e50914', color: 'white', border: 'none', padding: '12px 30px', borderRadius: '5px', fontSize: '16px', cursor: 'pointer', width: '200px' },
+                onClick: () => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(featuredMovie + ' trailer'), '_blank')
+            }, '▶ Watch Trailer')
+        );
+    };
+
+    // Movies Component
+    const MoviesList = () => {
+        const [movies, setMovies] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            fetch('https://api.themoviedb.org/3/movie/popular?api_key=5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e')
+                .then(res => res.json())
+                .then(data => {
+                    setMovies(data.results.slice(0, 10));
+                    setLoading(false);
+                });
+        }, []);
+
+        if (loading) return React.createElement('div', { style: { color: '#e50914' } }, 'Loading React movies...');
+
+        return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px' } },
+            movies.map(movie => 
+                React.createElement('div', {
+                    key: movie.id,
+                    className: 'movie-card',
+                    onClick: () => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(movie.title + ' trailer'), '_blank'),
+                    style: { cursor: 'pointer' }
+                },
+                    React.createElement('img', { src: `https://image.tmdb.org/t/p/w500${movie.poster_path}`, alt: movie.title, style: { width: '100%', height: '250px', objectFit: 'cover', borderRadius: '10px' } }),
+                    React.createElement('div', { className: 'title' }, movie.title),
+                    React.createElement('div', { className: 'year' }, movie.release_date ? movie.release_date.split('-')[0] : 'N/A')
+                )
+            )
+        );
+    };
+
+    // Render React
+    window.addEventListener('load', () => {
+        const heroRoot = document.getElementById('react-hero');
+        ReactDOM.createRoot(heroRoot).render(React.createElement(Hero));
+
+        const moviesRoot = document.getElementById('react-movies');
+        ReactDOM.createRoot(moviesRoot).render(React.createElement(MoviesList));
+    });
+</script>
+
+<!-- ============ VUE COMPONENTS ============ -->
+<script>
+    // Vue Components
+    const { createApp, ref, onMounted } = Vue;
+
+    const vueApp = createApp({
+        template: `
+            <div class="movies-grid">
+                <div v-for="movie in movies" :key="movie.id" class="movie-card" @click="playTrailer(movie.title)">
+                    <img :src="'https://image.tmdb.org/t/p/w500' + movie.poster_path" :alt="movie.title">
+                    <div class="title">{{ movie.title }}</div>
+                    <div class="year">{{ movie.release_date ? movie.release_date.split('-')[0] : 'N/A' }}</div>
+                </div>
+            </div>
+        `,
+        setup() {
+            const movies = ref([]);
+
+            const fetchMovies = async () => {
+                const res = await fetch('https://api.themoviedb.org/3/movie/now_playing?api_key=5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e');
+                const data = await res.json();
+                movies.value = data.results.slice(0, 10);
+            };
+
+            const playTrailer = (title) => {
+                window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(title + ' trailer'), '_blank');
+            };
+
+            onMounted(fetchMovies);
+
+            return { movies, playTrailer };
+        }
+    });
+
+    vueApp.mount('#vue-movies');
+</script>
+
+<!-- ============ ANGULAR COMPONENTS ============ -->
+<script>
+    // Angular Components
+    const { Component, NgModule, Injectable } = ng.core;
+    const { BrowserModule } = ng.platformBrowser;
+    const { platformBrowserDynamic } = ng.platformBrowserDynamic;
+    const { CommonModule } = ng.common;
+
+    // Angular Service
+    class MusicService {
+        constructor() {
+            this.songs = [
+                { title: 'Blinding Lights', artist: 'The Weeknd', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+                { title: 'Levitating', artist: 'Dua Lipa', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+                { title: 'Stay', artist: 'Kid Laroi', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+                { title: 'Flowers', artist: 'Miley Cyrus', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+                { title: 'Bohemian Rhapsody', artist: 'Queen', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+                { title: 'Hotel California', artist: 'Eagles', preview: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' }
+            ];
         }
 
-        .code-block {
-            background: #2d2d2d;
-            padding: 20px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #e5e5e5;
-            overflow-x: auto;
-            margin: 20px 0;
-            border: 1px solid #444;
+        getSongs() {
+            return this.songs;
         }
+    }
 
-        .code-comment {
-            color: #6a9955;
-        }
+    // Angular Component
+    const SongsComponent = Component({
+        selector: 'songs-component',
+        template: `
+            <div class="songs-grid">
+                <div *ngFor="let song of songs" class="song-card">
+                    <div class="song-title">{{ song.title }}</div>
+                    <div class="artist">{{ song.artist }}</div>
+                    <audio controls>
+                        <source [src]="song.preview" type="audio/mpeg">
+                    </audio>
+                </div>
+            </div>
+        `
+    }).Class({
+        constructor: [MusicService, function(musicService) {
+            this.songs = musicService.getSongs();
+        }]
+    });
 
-        .code-keyword {
-            color: #569cd6;
-        }
+    // Angular Module
+    const AppModule = NgModule({
+        imports: [BrowserModule, CommonModule],
+        declarations: [SongsComponent],
+        bootstrap: [SongsComponent],
+        providers: [MusicService]
+    }).Class({
+        constructor: function() {}
+    });
 
-        .code-function {
-            color: #dcdcaa;
-        }
+    // Bootstrap Angular after page load
+    window.addEventListener('load', () => {
+        platformBrowserDynamic().bootstrapModule(AppModule)
+            .catch(err => console.error('Angular bootstrap error:', err));
+    });
+</script>
 
-        .code-string {
-            color: #ce9178;
-        }
+<!-- ============ GLOBAL FUNCTIONS ============ -->
+<script>
+    // Switch between frameworks
+    function switchFramework(framework) {
+        // Update tabs
+        document.querySelectorAll('.framework-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
 
-        .demo-box {
-            background: #2a2a2a;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-        }
+        // Show/hide sections
+        document.getElementById('react-section').style.display = framework === 'react' ? 'block' : 'none';
+        document.getElementById('vue-section').style.display = framework === 'vue' ? 'block' : 'none';
+        document.getElementById('angular-section').style.display = framework === 'angular' ? 'block' : 'none';
+    }
+
+    // Global search that works across all frameworks
+    function handleGlobalSearch(query) {
+        if (!query.trim()) return;
+
+        // React search (via TMDB API)
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e&query=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.results && data.results[0]) {
+                    alert(`React found: ${data.results[0].title}`);
+                }
+            });
+
+        // Vue can handle search via its own methods
+        console.log('Vue search for:', query);
+        
+        // Angular search (filter songs)
+        console.log('Angular searching songs for:', query);
+    }
+
+    // Make TMDB images available globally
+    window.TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+</script>
+
+<!-- Additional style for active framework indication -->
+<style>
+    #react-section, #vue-section, #angular-section {
+        transition: opacity 0.3s;
+    }
+    .framework-tab {
+        background: transparent;
+    }
+    .framework-tab.active.react {
+        background: #61dafb;
+        color: #141414;
+    }
+    .framework-tab.active.vue {
+        background: #42b883;
+        color: #141414;
+    }
+    .framework-tab.active.angular {
+        background: #dd0031;
+        color: white;
+    }
+</style>
+</body>
+</html>  }
 
         .demo-button {
             background: #e50914;
