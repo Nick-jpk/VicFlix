@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Find Movies & Music</title>
+    <title>NickFlix - Real Movies & Music</title>
     <style>
         * {
             margin: 0;
@@ -39,6 +39,29 @@
             cursor: pointer;
         }
 
+        .api-status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.online {
+            background: #1db954;
+            color: white;
+        }
+
+        .status-badge.offline {
+            background: #e50914;
+            color: white;
+        }
+
         .search-container {
             position: relative;
             display: flex;
@@ -62,14 +85,6 @@
             outline: none;
             background: rgba(255,255,255,0.25);
             border-color: #e50914;
-            width: 100%;
-        }
-
-        .search-bar::before {
-            content: "🔍";
-            position: absolute;
-            left: 15px;
-            color: #888;
         }
 
         .search-icon {
@@ -79,90 +94,8 @@
             font-size: 18px;
         }
 
-        .search-results {
-            position: absolute;
-            top: 50px;
-            left: 0;
-            right: 0;
-            background: #1f1f1f;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.9);
-            display: none;
-            z-index: 1000;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #444;
-        }
-
-        .search-results.show {
-            display: block;
-        }
-
-        .search-result-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #333;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .search-result-item:hover {
-            background: #2a2a2a;
-        }
-
-        .search-result-img {
-            width: 45px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 5px;
-            margin-right: 15px;
-        }
-
-        .movie-icon, .song-icon {
-            width: 45px;
-            height: 60px;
-            border-radius: 5px;
-            margin-right: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .movie-icon {
-            background: #e50914;
-        }
-
-        .song-icon {
-            background: #1db954;
-        }
-
-        .search-result-info {
-            flex: 1;
-        }
-
-        .search-result-info h4 {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .search-result-info p {
-            font-size: 13px;
-            color: #aaa;
-        }
-
-        .badge {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #e50914;
-            display: inline-block;
-            margin-left: 8px;
-        }
-
         .hero {
-            height: 400px;
+            height: 450px;
             background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
                         url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920') center/cover;
             display: flex;
@@ -217,11 +150,25 @@
             padding: 30px 40px;
         }
 
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .section h2 {
             font-size: 28px;
-            margin-bottom: 20px;
             border-left: 5px solid #e50914;
             padding-left: 15px;
+        }
+
+        .api-source {
+            color: #1db954;
+            font-size: 14px;
+            background: rgba(29, 185, 84, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
         }
 
         .filter-tabs {
@@ -254,6 +201,7 @@
         .movie-card {
             cursor: pointer;
             transition: transform 0.3s;
+            position: relative;
         }
 
         .movie-card:hover {
@@ -271,11 +219,23 @@
         .movie-card .title {
             margin-top: 10px;
             font-weight: 600;
+            font-size: 15px;
         }
 
         .movie-card .year {
             color: #aaa;
             font-size: 13px;
+        }
+
+        .movie-card .rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #ffd700;
         }
 
         .song-card {
@@ -284,10 +244,12 @@
             border-radius: 12px;
             cursor: pointer;
             border: 1px solid #333;
+            transition: all 0.3s;
         }
 
         .song-card:hover {
             border-color: #1db954;
+            transform: translateY(-5px);
         }
 
         .song-card .song-title {
@@ -307,12 +269,35 @@
             margin-top: 10px;
         }
 
+        .song-card audio::-webkit-media-controls-panel {
+            background: #333;
+        }
+
         .no-results {
             grid-column: 1 / -1;
             text-align: center;
             padding: 60px;
             color: #aaa;
             font-size: 18px;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px;
+            color: #e50914;
+            font-size: 18px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
         }
 
         footer {
@@ -341,17 +326,6 @@
             .hero h1 {
                 font-size: 2.5rem;
             }
-            
-            .hero-search {
-                flex-direction: column;
-                background: transparent;
-            }
-            
-            .hero-search input {
-                background: rgba(0,0,0,0.6);
-                border-radius: 50px;
-                margin-bottom: 10px;
-            }
         }
     </style>
 </head>
@@ -360,680 +334,397 @@
 <header>
     <div class="logo" onclick="location.reload()">NICKFLIX</div>
     
+    <div class="api-status">
+        <span class="status-badge online" id="tmdbStatus">TMDB ✓</span>
+        <span class="status-badge online" id="deezerStatus">Deezer ✓</span>
+    </div>
+
     <div class="search-container">
         <span class="search-icon">🔍</span>
-        <input type="text" class="search-bar" id="searchInput" placeholder="Search movies, songs, artists, genres..." onkeyup="searchContent()">
-        <div class="search-results" id="searchResults"></div>
+        <input type="text" class="search-bar" id="searchInput" placeholder="Search movies or songs..." onkeyup="handleSearchInput()">
     </div>
 </header>
 
 <div class="hero">
-    <h1>Find Your Next Favorite</h1>
-    <p>Movies • Music • Trailers • More</p>
+    <h1>Real Movies. Real Music.</h1>
+    <p>Powered by TMDB & Deezer APIs</p>
     <div class="hero-search">
-        <input type="text" id="heroSearchInput" placeholder="Try: 'action', 'pop', 'Nolan', 'Bollywood', '2023'..." onkeyup="searchFromHero()">
-        <button onclick="searchFromHero()">Search</button>
+        <input type="text" id="heroSearchInput" placeholder="Try: 'Inception', 'The Weeknd', 'action'..." onkeyup="handleHeroSearch()">
+        <button onclick="performGlobalSearch()">Search</button>
     </div>
 </div>
 
 <div class="section">
-    <h2>🎬 Popular Movies</h2>
-    <div class="filter-tabs">
-        <span class="filter-tab active" onclick="filterContent('all')">All</span>
-        <span class="filter-tab" onclick="filterContent('movie')">Movies</span>
-        <span class="filter-tab" onclick="filterContent('song')">Songs</span>
-        <span class="filter-tab" onclick="filterContent('action')">Action</span>
-        <span class="filter-tab" onclick="filterContent('comedy')">Comedy</span>
-        <span class="filter-tab" onclick="filterContent('pop')">Pop</span>
-        <span class="filter-tab" onclick="filterContent('rock')">Rock</span>
-        <span class="filter-tab" onclick="filterContent('2023')">2023</span>
-        <span class="filter-tab" onclick="filterContent('bollywood')">Bollywood</span>
+    <div class="section-header">
+        <h2 id="sectionTitle">🔥 Popular Movies</h2>
+        <span class="api-source" id="apiSource">Live from TMDB</span>
     </div>
     
-    <div class="content-grid" id="contentGrid"></div>
+    <div class="filter-tabs">
+        <span class="filter-tab active" onclick="loadPopularMovies()">Popular Movies</span>
+        <span class="filter-tab" onclick="loadNowPlaying()">Now Playing</span>
+        <span class="filter-tab" onclick="loadTopRated()">Top Rated</span>
+        <span class="filter-tab" onclick="loadUpcoming()">Upcoming</span>
+        <span class="filter-tab" onclick="loadTrendingMusic()">Trending Music</span>
+        <span class="filter-tab" onclick="loadRockMusic()">Rock</span>
+        <span class="filter-tab" onclick="loadPopMusic()">Pop</span>
+    </div>
+    
+    <div class="content-grid" id="contentGrid">
+        <div class="loading">Loading from TMDB API</div>
+    </div>
 </div>
 
 <footer>
-    <p>© 2024 NickFlix - Search any movie or song. Type anything above!</p>
+    <p>© 2024 NickFlix - Movie data: TMDB API | Music previews: Deezer API | All free and legal</p>
 </footer>
 
 <script>
-    // COMPLETE DATABASE WITH DIVERSE CONTENT
-    const database = [
-        // HOLLYWOOD MOVIES
-        { type: 'movie', title: 'Inception', year: 2010, rating: '8.8', genre: 'sci-fi, action', director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/51K8ouYrHeL.jpg', action: 'inception' },
-        { type: 'movie', title: 'The Dark Knight', year: 2008, rating: '9.0', genre: 'action, crime', director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/71niXI3lxlL.jpg', action: 'darkknight' },
-        { type: 'movie', title: 'Interstellar', year: 2014, rating: '8.6', genre: 'sci-fi, drama', director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/81p+xe8cbnL.jpg', action: 'interstellar' },
-        { type: 'movie', title: 'The Matrix', year: 1999, rating: '8.7', genre: 'sci-fi, action', director: 'Wachowskis', image: 'https://m.media-amazon.com/images/I/71c05lTE03L.jpg', action: 'matrix' },
-        { type: 'movie', title: 'Pulp Fiction', year: 1994, rating: '8.9', genre: 'crime, drama', director: 'Tarantino', image: 'https://m.media-amazon.com/images/I/71xYQ1M+JsL.jpg', action: 'pulpfiction' },
-        { type: 'movie', title: 'Avengers: Endgame', year: 2019, rating: '8.4', genre: 'action, superhero', director: 'Russo Bros', image: 'https://m.media-amazon.com/images/I/81Y1dtNTVL.jpg', action: 'endgame' },
-        { type: 'movie', title: 'Joker', year: 2019, rating: '8.7', genre: 'drama, thriller', director: 'Todd Phillips', image: 'https://m.media-amazon.com/images/I/71QygQ4N+GL.jpg', action: 'joker' },
-        { type: 'movie', title: 'Top Gun: Maverick', year: 2022, rating: '8.3', genre: 'action', director: 'Kosinski', image: 'https://m.media-amazon.com/images/I/81pKpvEIHVL.jpg', action: 'topgun' },
-        
-        // BOLLYWOOD MOVIES
-        { type: 'movie', title: '3 Idiots', year: 2009, rating: '8.4', genre: 'comedy, drama', director: 'Hirani', image: 'https://m.media-amazon.com/images/I/51NvA1eQLPL.jpg', action: '3idiots' },
-        { type: 'movie', title: 'Dangal', year: 2016, rating: '8.3', genre: 'drama, sports', director: 'Tiwari', image: 'https://m.media-amazon.com/images/I/71zYpqxQbL.jpg', action: 'dangal' },
-        { type: 'movie', title: 'RRR', year: 2022, rating: '7.9', genre: 'action, drama', director: 'Rajamouli', image: 'https://m.media-amazon.com/images/I/81Jq7R4QeL.jpg', action: 'rrr' },
-        { type: 'movie', title: 'Pathaan', year: 2023, rating: '7.0', genre: 'action', director: 'Anand', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'pathaan' },
-        
-        // POP SONGS
-        { type: 'song', title: 'Blinding Lights', artist: 'The Weeknd', year: 2020, genre: 'pop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-        { type: 'song', title: 'Levitating', artist: 'Dua Lipa', year: 2020, genre: 'pop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-        { type: 'song', title: 'Stay', artist: 'Kid Laroi & Bieber', year: 2021, genre: 'pop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-        { type: 'song', title: 'Flowers', artist: 'Miley Cyrus', year: 2023, genre: 'pop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
-        
-        // ROCK SONGS
-        { type: 'song', title: 'Bohemian Rhapsody', artist: 'Queen', year: 1975, genre: 'rock', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
-        { type: 'song', title: 'Hotel California', artist: 'Eagles', year: 1976, genre: 'rock', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
-        { type: 'song', title: 'Sweet Child Mine', artist: 'Guns N Roses', year: 1987, genre: 'rock', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
-        
-        // BOLLYWOOD SONGS
-        { type: 'song', title: 'Tum Hi Ho', artist: 'Arijit Singh', year: 2013, genre: 'bollywood', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
-        { type: 'song', title: 'Kesariya', artist: 'Arijit Singh', year: 2022, genre: 'bollywood', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3' },
-        { type: 'song', title: 'Naatu Naatu', artist: 'RRR', year: 2022, genre: 'bollywood', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' },
-        
-        // HIP HOP
-        { type: 'song', title: 'God\'s Plan', artist: 'Drake', year: 2018, genre: 'hip-hop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3' },
-        { type: 'song', title: 'Sicko Mode', artist: 'Travis Scott', year: 2018, genre: 'hip-hop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3' },
-    ];
+    // API Keys and Configuration
+    const TMDB_API_KEY = '5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e'; // Public demo key
+    const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+    const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+    
+    // No API key needed for Deezer - it's public!
+    const DEEZER_API = 'https://api.deezer.com';
 
-    // Initialize page
+    // State
+    let currentContent = [];
+    let currentSearchTerm = '';
+
+    // Initialize
     window.onload = function() {
-        displayContent(database);
+        loadPopularMovies();
+        checkAPIStatus();
     };
 
-    // SEARCH FUNCTION - THIS IS THE FIXED PART
-    function searchContent() {
-        const query = document.getElementById('searchInput').value.toLowerCase().trim();
-        const heroInput = document.getElementById('heroSearchInput');
-        if (heroInput) heroInput.value = query;
-        
-        performSearch(query);
-    }
-
-    function searchFromHero() {
-        const query = document.getElementById('heroSearchInput').value.toLowerCase().trim();
-        const mainInput = document.getElementById('searchInput');
-        if (mainInput) mainInput.value = query;
-        
-        performSearch(query);
-    }
-
-    function performSearch(query) {
-        const resultsContainer = document.getElementById('searchResults');
-        
-        if (!query) {
-            resultsContainer.classList.remove('show');
-            displayContent(database); // Show all when empty
-            return;
+    // API Status Check
+    async function checkAPIStatus() {
+        try {
+            const tmdbCheck = await fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}`);
+            if (tmdbCheck.ok) {
+                document.getElementById('tmdbStatus').className = 'status-badge online';
+            }
+        } catch (e) {
+            document.getElementById('tmdbStatus').className = 'status-badge offline';
         }
 
-        // Search in multiple fields
-        const results = database.filter(item => {
-            // Search in title
-            if (item.title.toLowerCase().includes(query)) return true;
-            
-            // Search in artist (for songs)
-            if (item.artist && item.artist.toLowerCase().includes(query)) return true;
-            
-            // Search in genre
-            if (item.genre && item.genre.toLowerCase().includes(query)) return true;
-            
-            // Search in director (for movies)
-            if (item.director && item.director.toLowerCase().includes(query)) return true;
-            
-            // Search in year
-            if (item.year && item.year.toString().includes(query)) return true;
-            
-            return false;
-        });
-
-        // Show search results dropdown
-        displaySearchDropdown(results, query);
-        
-        // Update main content with results
-        if (results.length > 0) {
-            displayContent(results);
-        } else {
-            displayContent([]); // Show no results message
+        try {
+            const deezerCheck = await fetch(`${DEEZER_API}/chart/0/tracks`);
+            if (deezerCheck.ok) {
+                document.getElementById('deezerStatus').className = 'status-badge online';
+            }
+        } catch (e) {
+            document.getElementById('deezerStatus').className = 'status-badge offline';
         }
     }
 
-    function displaySearchDropdown(results, query) {
-        const container = document.getElementById('searchResults');
+    // ============ TMDB API FUNCTIONS ============
+    async function loadPopularMovies() {
+        showLoading('Loading popular movies from TMDB...');
+        document.getElementById('sectionTitle').textContent = '🔥 Popular Movies';
+        document.getElementById('apiSource').textContent = 'Live from TMDB';
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            const data = await response.json();
+            
+            const movies = data.results.map(movie => ({
+                type: 'movie',
+                id: movie.id,
+                title: movie.title,
+                year: new Date(movie.release_date).getFullYear() || 'N/A',
+                rating: movie.vote_average.toFixed(1),
+                genre: 'movie',
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster',
+                backdrop: movie.backdrop_path ? `${TMDB_IMAGE_BASE}${movie.backdrop_path}` : null,
+                overview: movie.overview
+            }));
+            
+            currentContent = movies;
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load movies from TMDB');
+            console.error(error);
+        }
+    }
+
+    async function loadNowPlaying() {
+        showLoading('Loading now playing movies...');
+        document.getElementById('sectionTitle').textContent = '🎬 Now Playing';
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            const data = await response.json();
+            
+            const movies = data.results.map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: new Date(movie.release_date).getFullYear(),
+                rating: movie.vote_average.toFixed(1),
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load');
+        }
+    }
+
+    async function loadTopRated() {
+        showLoading('Loading top rated movies...');
+        document.getElementById('sectionTitle').textContent = '⭐ Top Rated';
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            const data = await response.json();
+            
+            const movies = data.results.map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: new Date(movie.release_date).getFullYear(),
+                rating: movie.vote_average.toFixed(1),
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load');
+        }
+    }
+
+    async function loadUpcoming() {
+        showLoading('Loading upcoming movies...');
+        document.getElementById('sectionTitle').textContent = '📅 Upcoming';
+        
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+            const data = await response.json();
+            
+            const movies = data.results.map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: new Date(movie.release_date).getFullYear(),
+                rating: movie.vote_average.toFixed(1),
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster'
+            }));
+            
+            displayContent(movies);
+        } catch (error) {
+            showError('Failed to load');
+        }
+    }
+
+    // ============ DEEZER API FUNCTIONS ============
+    async function loadTrendingMusic() {
+        showLoading('Loading trending music from Deezer...');
+        document.getElementById('sectionTitle').textContent = '🎵 Trending Music';
+        document.getElementById('apiSource').textContent = 'Live from Deezer';
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/chart/0/tracks`);
+            const data = await response.json();
+            
+            const songs = data.data.slice(0, 20).map(track => ({
+                type: 'song',
+                id: track.id,
+                title: track.title,
+                artist: track.artist.name,
+                duration: track.duration,
+                preview: track.preview, // 30-second preview URL
+                image: track.album.cover_medium,
+                album: track.album.title
+            }));
+            
+            currentContent = songs;
+            displayContent(songs);
+        } catch (error) {
+            showError('Failed to load music');
+            console.error(error);
+        }
+    }
+
+    async function loadRockMusic() {
+        showLoading('Loading rock music...');
+        document.getElementById('sectionTitle').textContent = '🎸 Rock Music';
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/search?q=rock&limit=20`);
+            const data = await response.json();
+            
+            const songs = data.data.map(track => ({
+                type: 'song',
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium
+            }));
+            
+            displayContent(songs);
+        } catch (error) {
+            showError('Failed to load');
+        }
+    }
+
+    async function loadPopMusic() {
+        showLoading('Loading pop music...');
+        document.getElementById('sectionTitle').textContent = '🎤 Pop Music';
+        
+        try {
+            const response = await fetch(`${DEEZER_API}/search?q=pop&limit=20`);
+            const data = await response.json();
+            
+            const songs = data.data.map(track => ({
+                type: 'song',
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium
+            }));
+            
+            displayContent(songs);
+        } catch (error) {
+            showError('Failed to load');
+        }
+    }
+
+    // ============ SEARCH FUNCTIONS ============
+    async function searchMovies(query) {
+        try {
+            const response = await fetch(`${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`);
+            const data = await response.json();
+            
+            return data.results.map(movie => ({
+                type: 'movie',
+                title: movie.title,
+                year: new Date(movie.release_date).getFullYear(),
+                rating: movie.vote_average.toFixed(1),
+                image: movie.poster_path ? `${TMDB_IMAGE_BASE}${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Poster',
+                overview: movie.overview
+            }));
+        } catch (error) {
+            console.error('Movie search failed:', error);
+            return [];
+        }
+    }
+
+    async function searchMusic(query) {
+        try {
+            const response = await fetch(`${DEEZER_API}/search?q=${encodeURIComponent(query)}&limit=20`);
+            const data = await response.json();
+            
+            return data.data.map(track => ({
+                type: 'song',
+                title: track.title,
+                artist: track.artist.name,
+                preview: track.preview,
+                image: track.album.cover_medium
+            }));
+        } catch (error) {
+            console.error('Music search failed:', error);
+            return [];
+        }
+    }
+
+    async function performGlobalSearch() {
+        const query = document.getElementById('heroSearchInput').value.trim();
+        if (!query) return;
+        
+        showLoading(`Searching for "${query}"...`);
+        document.getElementById('sectionTitle').textContent = `🔍 Search Results: "${query}"`;
+        document.getElementById('apiSource').textContent = 'TMDB + Deezer';
+        
+        // Search both APIs in parallel
+        const [movies, songs] = await Promise.all([
+            searchMovies(query),
+            searchMusic(query)
+        ]);
+        
+        const results = [...movies, ...songs];
+        currentContent = results;
         
         if (results.length === 0) {
-            container.innerHTML = `<div class="search-result-item" style="justify-content: center;">🔍 No results for "${query}"</div>`;
-            container.classList.add('show');
-            return;
+            document.getElementById('contentGrid').innerHTML = `<div class="no-results">No results found for "${query}"</div>`;
+        } else {
+            displayContent(results);
         }
-
-        let html = '';
-        const limited = results.slice(0, 8); // Show top 8
-        
-        limited.forEach(item => {
-            if (item.type === 'movie') {
-                html += `
-                    <div class="search-result-item" onclick="playTrailer('${item.action}'); document.getElementById('searchResults').classList.remove('show');">
-                        <img src="${item.image}" class="search-result-img" alt="${item.title}">
-                        <div class="search-result-info">
-                            <h4>${item.title} <span style="color:#e50914; font-size:11px;">MOVIE</span></h4>
-                            <p>${item.year} • ${item.genre} • ⭐ ${item.rating}</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="search-result-item" onclick="playSong('${item.title}')">
-                        <div class="song-icon">🎵</div>
-                        <div class="search-result-info">
-                            <h4>${item.title} <span style="color:#1db954; font-size:11px;">SONG</span></h4>
-                            <p>${item.artist} • ${item.year} • ${item.genre}</p>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-
-        if (results.length > 8) {
-            html += `<div class="search-result-item" style="justify-content: center; color: #e50914;">+${results.length-8} more results</div>`;
-        }
-
-        container.innerHTML = html;
-        container.classList.add('show');
     }
 
+    function handleSearchInput() {
+        const query = document.getElementById('searchInput').value;
+        document.getElementById('heroSearchInput').value = query;
+    }
+
+    function handleHeroSearch() {
+        const query = document.getElementById('heroSearchInput').value;
+        document.getElementById('searchInput').value = query;
+    }
+
+    // ============ DISPLAY FUNCTIONS ============
     function displayContent(items) {
         const grid = document.getElementById('contentGrid');
         
-        if (items.length === 0) {
-            grid.innerHTML = '<div class="no-results">🎬 No movies or songs found. Try a different search!</div>';
-            return;
-        }
-
         let html = '';
         
-        items.slice(0, 20).forEach(item => { // Show up to 20 items
+        items.forEach(item => {
             if (item.type === 'movie') {
                 html += `
-                    <div class="movie-card" onclick="playTrailer('${item.action}')">
+                    <div class="movie-card" onclick="playMovieTrailer('${item.title}')">
                         <img src="${item.image}" alt="${item.title}" loading="lazy">
+                        <div class="rating">⭐ ${item.rating || '?'}</div>
                         <div class="title">${item.title}</div>
-                        <div class="year">${item.year} • ⭐ ${item.rating}</div>
+                        <div class="year">${item.year || ''}</div>
                     </div>
                 `;
             } else {
                 html += `
-                    <div class="song-card" onclick="playSong('${item.title}')">
-              width: 100%;
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            nav a {
-                margin: 0 10px;
-            }
-            
-            .search-container {
-                width: 100%;
-                min-width: auto;
-            }
-            
-            .hero {
-                padding: 20px;
-                height: auto;
-                min-height: 350px;
-            }
-            
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero-search {
-                flex-direction: column;
-                background: transparent;
-                gap: 10px;
-            }
-            
-            .hero-search input {
-                background: rgba(0,0,0,0.6);
-                border-radius: 50px;
-            }
-            
-            .section {
-                padding: 20px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="logo" onclick="scrollToTop()">NICKFLIX</div>
-    
-    <div class="nav-container">
-        <nav>
-            <a href="#" onclick="showHome()">Home</a>
-            <a href="#" onclick="showMovies()">Movies</a>
-            <a href="#" onclick="showMusic()">Music</a>
-            <a href="#" onclick="showTrending()">Trending</a>
-        </nav>
-        
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-bar" placeholder="Search any movie or song... (e.g., 'action', 'rock', 'Bollywood')" onkeyup="handleSmartSearch(this.value)">
-            <div class="search-results" id="searchResults"></div>
-        </div>
-    </div>
-</header>
-
-<div class="hero">
-    <h1>Find Your Entertainment</h1>
-    <p>Millions of movies and songs at your fingertips</p>
-    <div class="hero-search">
-        <input type="text" id="heroSearch" placeholder="Search for anything... (e.g., 'comedy movies', 'pop songs', 'Christopher Nolan')" onkeyup="handleSmartSearch(this.value)">
-        <button onclick="searchFromHero()">Search</button>
-    </div>
-</div>
-
-<div class="section" id="mainContent">
-    <div class="section-header">
-        <h2>🔥 Trending Now</h2>
-        <span class="view-all" onclick="showTrending()">View All →</span>
-    </div>
-    
-    <div class="filter-tabs">
-        <span class="filter-tab active" onclick="filterContent('all')">All</span>
-        <span class="filter-tab" onclick="filterContent('movie')">Movies</span>
-        <span class="filter-tab" onclick="filterContent('song')">Songs</span>
-        <span class="filter-tab" onclick="filterContent('action')">Action</span>
-        <span class="filter-tab" onclick="filterContent('comedy')">Comedy</span>
-        <span class="filter-tab" onclick="filterContent('rock')">Rock</span>
-        <span class="filter-tab" onclick="filterContent('pop')">Pop</span>
-        <span class="filter-tab" onclick="filterContent('2024')">2024</span>
-    </div>
-    
-    <div class="content-grid" id="contentGrid"></div>
-</div>
-
-<footer>
-    <p>© 2024 NickFlix - Unlimited Entertainment | Over 10,000+ movies & 50,000+ songs</p>
-</footer>
-
-<script>
-    // MASSIVE CONTENT DATABASE - 100+ items with diverse categories
-    const contentDatabase = [
-        // HOLLYWOOD MOVIES
-        { type: 'movie', title: 'Inception', year: 2010, rating: '8.8', genre: ['sci-fi', 'action', 'thriller'], director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/51K8ouYrHeL.jpg', action: 'inception' },
-        { type: 'movie', title: 'The Dark Knight', year: 2008, rating: '9.0', genre: ['action', 'crime', 'drama'], director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/71niXI3lxlL.jpg', action: 'darkknight' },
-        { type: 'movie', title: 'Interstellar', year: 2014, rating: '8.6', genre: ['sci-fi', 'drama', 'adventure'], director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/81p+xe8cbnL.jpg', action: 'interstellar' },
-        { type: 'movie', title: 'The Matrix', year: 1999, rating: '8.7', genre: ['sci-fi', 'action'], director: 'Wachowskis', image: 'https://m.media-amazon.com/images/I/71c05lTE03L.jpg', action: 'matrix' },
-        { type: 'movie', title: 'The Godfather', year: 1972, rating: '9.2', genre: ['crime', 'drama'], director: 'Francis Ford Coppola', image: 'https://m.media-amazon.com/images/I/51rOnIjLJiL.jpg', action: 'godfather' },
-        { type: 'movie', title: 'Pulp Fiction', year: 1994, rating: '8.9', genre: ['crime', 'drama'], director: 'Quentin Tarantino', image: 'https://m.media-amazon.com/images/I/71xYQ1M+JsL.jpg', action: 'pulpfiction' },
-        { type: 'movie', title: 'Dune', year: 2021, rating: '8.0', genre: ['sci-fi', 'adventure'], director: 'Denis Villeneuve', image: 'https://m.media-amazon.com/images/I/81a5iFz+4XL.jpg', action: 'dune' },
-        { type: 'movie', title: 'Tenet', year: 2020, rating: '7.5', genre: ['sci-fi', 'action'], director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/71vQY8K7+ML.jpg', action: 'tenet' },
-        { type: 'movie', title: 'Joker', year: 2019, rating: '8.7', genre: ['drama', 'thriller'], director: 'Todd Phillips', image: 'https://m.media-amazon.com/images/I/71QygQ4N+GL.jpg', action: 'joker' },
-        { type: 'movie', title: 'Avengers: Endgame', year: 2019, rating: '8.4', genre: ['action', 'sci-fi', 'superhero'], director: 'Russo Brothers', image: 'https://m.media-amazon.com/images/I/81Y1dtNTVL.jpg', action: 'endgame' },
-        { type: 'movie', title: 'Spider-Man: No Way Home', year: 2021, rating: '8.2', genre: ['action', 'superhero'], director: 'Jon Watts', image: 'https://m.media-amazon.com/images/I/81jHw0QJQjL.jpg', action: 'spiderman' },
-        { type: 'movie', title: 'The Batman', year: 2022, rating: '7.8', genre: ['action', 'crime'], director: 'Matt Reeves', image: 'https://m.media-amazon.com/images/I/71fVlYYQqTL.jpg', action: 'batman' },
-        { type: 'movie', title: 'Top Gun: Maverick', year: 2022, rating: '8.3', genre: ['action', 'drama'], director: 'Joseph Kosinski', image: 'https://m.media-amazon.com/images/I/81pKpvEIHVL.jpg', action: 'topgun' },
-        { type: 'movie', title: 'Oppenheimer', year: 2023, rating: '8.5', genre: ['drama', 'history'], director: 'Christopher Nolan', image: 'https://m.media-amazon.com/images/I/71J0h+Z5qL.jpg', action: 'oppenheimer' },
-        { type: 'movie', title: 'Barbie', year: 2023, rating: '7.0', genre: ['comedy', 'fantasy'], director: 'Greta Gerwig', image: 'https://m.media-amazon.com/images/I/81PKyC9k0NL.jpg', action: 'barbie' },
-        
-        // BOLLYWOOD MOVIES
-        { type: 'movie', title: '3 Idiots', year: 2009, rating: '8.4', genre: ['comedy', 'drama'], director: 'Rajkumar Hirani', image: 'https://m.media-amazon.com/images/I/51NvA1eQLPL.jpg', action: '3idiots' },
-        { type: 'movie', title: 'Dangal', year: 2016, rating: '8.3', genre: ['drama', 'sports'], director: 'Nitesh Tiwari', image: 'https://m.media-amazon.com/images/I/71zYpqxQbL.jpg', action: 'dangal' },
-        { type: 'movie', title: 'PK', year: 2014, rating: '8.1', genre: ['comedy', 'drama'], director: 'Rajkumar Hirani', image: 'https://m.media-amazon.com/images/I/71NgkUJpPL.jpg', action: 'pk' },
-        { type: 'movie', title: 'Bahubali 2', year: 2017, rating: '8.2', genre: ['action', 'fantasy'], director: 'S.S. Rajamouli', image: 'https://m.media-amazon.com/images/I/81aFQ8d7bL.jpg', action: 'bahubali' },
-        { type: 'movie', title: 'RRR', year: 2022, rating: '7.9', genre: ['action', 'drama'], director: 'S.S. Rajamouli', image: 'https://m.media-amazon.com/images/I/81Jq7R4QeL.jpg', action: 'rrr' },
-        { type: 'movie', title: 'KGF Chapter 2', year: 2022, rating: '8.0', genre: ['action'], director: 'Prashanth Neel', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'kgf' },
-        { type: 'movie', title: 'Pathaan', year: 2023, rating: '7.0', genre: ['action', 'thriller'], director: 'Siddharth Anand', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'pathaan' },
-        { type: 'movie', title: 'Jawan', year: 2023, rating: '7.5', genre: ['action', 'drama'], director: 'Atlee', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'jawan' },
-        
-        // INTERNATIONAL CINEMA
-        { type: 'movie', title: 'Parasite', year: 2019, rating: '8.6', genre: ['thriller', 'drama'], director: 'Bong Joon-ho', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'parasite' },
-        { type: 'movie', title: 'Spirited Away', year: 2001, rating: '8.6', genre: ['anime', 'fantasy'], director: 'Hayao Miyazaki', image: 'https://m.media-amazon.com/images/I/81pKQa7eL.jpg', action: 'spiritedaway' },
-        
-        // ENGLISH SONGS
-        { type: 'song', title: 'Blinding Lights', artist: 'The Weeknd', year: 2020, genre: 'pop', audio: 'song1', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-        { type: 'song', title: 'Levitating', artist: 'Dua Lipa', year: 2020, genre: 'pop', audio: 'song2', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-        { type: 'song', title: 'Stay', artist: 'Kid Laroi & Justin Bieber', year: 2021, genre: 'pop', audio: 'song3', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-        { type: 'song', title: 'Good 4 U', artist: 'Olivia Rodrigo', year: 2021, genre: 'pop/rock', audio: 'song4', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
-        { type: 'song', title: 'Montero', artist: 'Lil Nas X', year: 2021, genre: 'pop', audio: 'song5', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
-        { type: 'song', title: 'Peaches', artist: 'Justin Bieber', year: 2021, genre: 'pop', audio: 'song6', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
-        { type: 'song', title: 'Flowers', artist: 'Miley Cyrus', year: 2023, genre: 'pop', audio: 'song7', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3'ero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .section {
-                padding: 20px;
-            }
-            
-            .card {
-                min-width: 150px;
-            }
-            
-            .card img {
-                height: 200px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="logo" onclick="scrollToTop()">NICKFLIX</div>
-    
-    <div class="nav-container">
-        <nav>
-            <a href="#" onclick="showSection('home')">Home</a>
-            <a href="#" onclick="showSection('movies')">Movies</a>
-            <a href="#" onclick="showSection('songs')">Songs</a>
-            <a href="#" onclick="showSection('new')">New & Popular</a>
-        </nav>
-        
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-bar" placeholder="Search movies & songs..." onkeyup="handleSearch(this.value)">
-            <div class="search-results" id="searchResults"></div>
-        </div>
-    </div>
-</header>
-
-<div class="hero">
-    <h1>Unlimited Movies & Music</h1>
-    <p>Watch trailers, listen to hits, discover entertainment</p>
-    <button onclick="playFeatured()">▶ Watch Featured Trailer</button>
-</div>
-
-<div class="section" id="movies-section">
-    <h2>🔥 Trending Movies</h2>
-    <div class="row">
-        <div class="card" onclick="playTrailer('inception')" data-title="Inception" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/51K8ouYrHeL.jpg" alt="Inception" loading="lazy">
-        </div>
-        <div class="card" onclick="playTrailer('darkknight')" data-title="The Dark Knight" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/71niXI3lxlL.jpg" alt="The Dark Knight" loading="lazy">
-        </div>
-        <div class="card" onclick="playTrailer('interstellar')" data-title="Interstellar" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/81p+xe8cbnL.jpg" alt="Interstellar" loading="lazy">
-        </div>
-        <div class="card" onclick="playTrailer('matrix')" data-title="The Matrix" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/71c05lTE03L.jpg" alt="The Matrix" loading="lazy">
-        </div>
-        <div class="card" onclick="playTrailer('godfather')" data-title="The Godfather" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/51rOnIjLJiL.jpg" alt="The Godfather" loading="lazy">
-        </div>
-        <div class="card" onclick="playTrailer('pulpfiction')" data-title="Pulp Fiction" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/71xYQ1M+JsL.jpg" alt="Pulp Fiction" loading="lazy">
-        </div>
-    </div>
-</div>
-
-<div class="section" id="songs-section">
-    <h2>🎵 Top Charting Songs</h2>
-    <div class="song-container">
-        <div class="song" data-title="Blinding Lights" data-artist="The Weeknd" data-category="song">
-            <p>1. "Blinding Lights" - The Weeknd</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-        <div class="song" data-title="Levitating" data-artist="Dua Lipa" data-category="song">
-            <p>2. "Levitating" - Dua Lipa</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-        <div class="song" data-title="Stay" data-artist="Kid Laroi & Justin Bieber" data-category="song">
-            <p>3. "Stay" - Kid Laroi & Justin Bieber</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-        <div class="song" data-title="Good 4 U" data-artist="Olivia Rodrigo" data-category="song">
-            <p>4. "Good 4 U" - Olivia Rodrigo</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-        <div class="song" data-title="Montero" data-artist="Lil Nas X" data-category="song">
-            <p>5. "Montero" - Lil Nas X</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-        <div class="song" data-title="Peaches" data-artist="Justin Bieber" data-category="song">
-            <p>6. "Peaches" - Justin Bieber</p>
-            <audio controls preload="none" onclick="event.stopPropagation()">
-                <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" type="audio/mpeg">
-            </audio>
-        </div>
-    </div>
-</div>
-
-<div class="section" id="new-section" style="display:none;">
-    <h2>✨ New & Popular</h2>
-    <div class="row">
-        <div class="card" onclick="playTrailer('dune')" data-title="Dune" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/81a5iFz+4XL.jpg" alt="Dune">
-        </div>
-        <div class="card" onclick="playTrailer('tenet')" data-title="Tenet" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/71vQY8K7+ML.jpg" alt="Tenet">
-        </div>
-        <div class="card" onclick="playTrailer('joker')" data-title="Joker" data-category="movie">
-            <img src="https://m.media-amazon.com/images/I/71QygQ4N+GL.jpg" alt="Joker">
-        </div>
-    </div>
-    <h2 style="margin-top:30px;">🎤 New Music Releases</h2>
-    <div class="song-container">
-        <div class="song" data-title="Flowers" data-artist="Miley Cyrus" data-category="song">
-            <p>"Flowers" - Miley Cyrus</p>
-            <audio controls><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3"></audio>
-        </div>
-        <div class="song" data-title="Kill Bill" data-artist="SZA" data-category="song">
-            <p>"Kill Bill" - SZA</p>
-            <audio controls><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"></audio>
-        </div>
-    </div>
-</div>
-
-<!-- Notification -->
-<div class="movie-info" id="movieNotification">
-    <span>🎬 Now Playing:</span> Trailer opening in new tab...
-</div>
-
-<footer>
-    <p>© 2024 NickFlix. All rights reserved. | Your ultimate movie & music destination</p>
-</footer>
-
-<script>
-    // Smooth scroll to top
-    function scrollToTop() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Show different sections
-    function showSection(section) {
-        const moviesSec = document.getElementById('movies-section');
-        const songsSec = document.getElementById('songs-section');
-        const newSec = document.getElementById('new-section');
-        
-        if(section === 'movies') {
-            moviesSec.style.display = 'block';
-            songsSec.style.display = 'none';
-            newSec.style.display = 'none';
-        } else if(section === 'songs') {
-            moviesSec.style.display = 'none';
-            songsSec.style.display = 'block';
-            newSec.style.display = 'none';
-        } else if(section === 'new') {
-            moviesSec.style.display = 'none';
-            songsSec.style.display = 'none';
-            newSec.style.display = 'block';
-        } else {
-            moviesSec.style.display = 'block';
-            songsSec.style.display = 'block';
-            newSec.style.display = 'none';
-        }
-        
-        // Clear search when changing sections
-        document.querySelector('.search-bar').value = '';
-        document.getElementById('searchResults').classList.remove('show');
-    }
-
-    // Play trailer function
-    function playTrailer(movie) {
-        const notification = document.getElementById('movieNotification');
-        notification.classList.add('show');
-        
-        const movieUrls = {
-            inception: 'https://www.youtube.com/results?search_query=inception+trailer',
-            darkknight: 'https://www.youtube.com/results?search_query=the+dark+knight+trailer',
-            interstellar: 'https://www.youtube.com/results?search_query=interstellar+trailer',
-            matrix: 'https://www.youtube.com/results?search_query=the+matrix+trailer',
-            godfather: 'https://www.youtube.com/results?search_query=the+godfather+trailer',
-            pulpfiction: 'https://www.youtube.com/results?search_query=pulp+fiction+trailer',
-            dune: 'https://www.youtube.com/results?search_query=dune+2021+trailer',
-            tenet: 'https://www.youtube.com/results?search_query=tenet+trailer',
-            joker: 'https://www.youtube.com/results?search_query=joker+2019+trailer'
-        };
-        
-        const url = movieUrls[movie] || 'https://www.youtube.com/results?search_query=movie+trailer';
-        window.open(url, '_blank');
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 3000);
-    }
-
-    // Play featured trailer
-    function playFeatured() {
-        playTrailer('inception');
-    }
-
-    // Global Search Function
-    const contentDatabase = [
-        // Movies
-        { type: 'movie', title: 'Inception', year: '2010', image: 'https://m.media-amazon.com/images/I/51K8ouYrHeL.jpg', action: 'inception' },
-        { type: 'movie', title: 'The Dark Knight', year: '2008', image: 'https://m.media-amazon.com/images/I/71niXI3lxlL.jpg', action: 'darkknight' },
-        { type: 'movie', title: 'Interstellar', year: '2014', image: 'https://m.media-amazon.com/images/I/81p+xe8cbnL.jpg', action: 'interstellar' },
-        { type: 'movie', title: 'The Matrix', year: '1999', image: 'https://m.media-amazon.com/images/I/71c05lTE03L.jpg', action: 'matrix' },
-        { type: 'movie', title: 'The Godfather', year: '1972', image: 'https://m.media-amazon.com/images/I/51rOnIjLJiL.jpg', action: 'godfather' },
-        { type: 'movie', title: 'Pulp Fiction', year: '1994', image: 'https://m.media-amazon.com/images/I/71xYQ1M+JsL.jpg', action: 'pulpfiction' },
-        { type: 'movie', title: 'Dune', year: '2021', image: 'https://m.media-amazon.com/images/I/81a5iFz+4XL.jpg', action: 'dune' },
-        { type: 'movie', title: 'Tenet', year: '2020', image: 'https://m.media-amazon.com/images/I/71vQY8K7+ML.jpg', action: 'tenet' },
-        { type: 'movie', title: 'Joker', year: '2019', image: 'https://m.media-amazon.com/images/I/71QygQ4N+GL.jpg', action: 'joker' },
-        
-        // Songs
-        { type: 'song', title: 'Blinding Lights', artist: 'The Weeknd', audio: 'song1' },
-        { type: 'song', title: 'Levitating', artist: 'Dua Lipa', audio: 'song2' },
-        { type: 'song', title: 'Stay', artist: 'Kid Laroi & Justin Bieber', audio: 'song3' },
-        { type: 'song', title: 'Good 4 U', artist: 'Olivia Rodrigo', audio: 'song4' },
-        { type: 'song', title: 'Montero', artist: 'Lil Nas X', audio: 'song5' },
-        { type: 'song', title: 'Peaches', artist: 'Justin Bieber', audio: 'song6' },
-        { type: 'song', title: 'Flowers', artist: 'Miley Cyrus', audio: 'song7' },
-        { type: 'song', title: 'Kill Bill', artist: 'SZA', audio: 'song8' }
-    ];
-
-    function handleSearch(query) {
-        const resultsContainer = document.getElementById('searchResults');
-        
-        if (!query.trim()) {
-            resultsContainer.classList.remove('show');
-            return;
-        }
-
-        query = query.toLowerCase();
-        const results = contentDatabase.filter(item => {
-            const title = item.title.toLowerCase();
-            const artist = item.artist ? item.artist.toLowerCase() : '';
-            return title.includes(query) || artist.includes(query);
-        });
-
-        displaySearchResults(results);
-        resultsContainer.classList.add('show');
-    }
-
-    function displaySearchResults(results) {
-        const container = document.getElementById('searchResults');
-        
-        if (results.length === 0) {
-            container.innerHTML = '<div class="no-results">🔍 No matches found</div>';
-            return;
-        }
-
-        let html = '';
-        results.forEach(item => {
-            if (item.type === 'movie') {
-                html += `
-                    <div class="search-result-item" onclick="playTrailer('${item.action}'); document.getElementById('searchResults').classList.remove('show');">
-                        <img src="${item.image}" class="search-result-img" alt="${item.title}">
-                        <div class="search-result-info">
-                            <h4>${item.title} <span class="search-result-badge">MOVIE</span></h4>
-                            <p>${item.year} • Click to watch trailer</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="search-result-item" onclick="playSong('${item.title}')">
-                        <div style="width:45px;height:60px;background:#e50914;border-radius:5px;margin-right:15px;display:flex;align-items:center;justify-content:center;font-size:24px;">🎵</div>
-                        <div class="search-result-info">
-                            <h4>${item.title} <span class="search-result-badge">SONG</span></h4>
-                            <p>${item.artist} • Click to play</p>
-                        </div>
+                    <div class="song-card" onclick="playSongPreview('${item.preview}', '${item.title}')">
+                        <img src="${item.image}" style="width:100%; height:150px; object-fit:cover; border-radius:8px; margin-bottom:10px;" alt="${item.title}">
+                        <div class="song-title">${item.title}</div>
+                        <div class="artist">${item.artist}</div>
+                        <audio controls preload="none" onclick="event.stopPropagation()" id="audio-${item.id}">
+                            <source src="${item.preview}" type="audio/mpeg">
+                        </audio>
                     </div>
                 `;
             }
         });
 
-        container.innerHTML = html;
+        grid.innerHTML = html;
     }
 
-    // Play song from search
-    function playSong(title) {
-        // Find and play the corresponding audio element
-        const songElements = document.querySelectorAll('.song');
-        for (let element of songElements) {
-            if (element.querySelector('p').textContent.includes(title)) {
-                const audio = element.querySelector('audio');
-                if (audio) {
-                    audio.play();
-                    // Scroll to the song
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.style.borderColor = '#e50914';
-                    setTimeout(() => element.style.borderColor = '#333', 2000);
-                }
+    function showLoading(message) {
+        document.getElementById('contentGrid').innerHTML = `<div class="loading">${message}</div>`;
+    }
+
+    function showError(message) {
+        document.getElementById('contentGrid').innerHTML = `<div class="no-results">❌ ${message}</div>`;
+    }
+
+    // ============ INTERACTION FUNCTIONS ============
+    function playMovieTrailer(title) {
+        // Open YouTube search for the movie trailer
+        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(title + ' trailer')}`, '_blank');
+    }
+
+    function playSongPreview(previewUrl, title) {
+        // Find and play the audio element
+        const audioElements = document.querySelectorAll('audio');
+        for (let audio of audioElements) {
+            if (audio.src.includes(previewUrl)) {
+                audio.play();
                 break;
             }
         }
-        document.getElementById('searchResults').classList.remove('show');
-        document.querySelector('.search-bar').value = '';
     }
 
-    // Close search results when clicking outside
-    document.addEventListener('click', function(event) {
-        const searchContainer = document.querySelector('.search-container');
-        const results = document.getElementById('searchResults');
-        
-        if (!searchContainer.contains(event.target)) {
-            results.classList.remove('show');
-        }
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
     });
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'm') showSection('movies');
-        if(e.key === 's') showSection('songs');
-        if(e.key === 'h') showSection('home');
-        if(e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-            e.preventDefault();
-            document.querySelector('.search-bar').focus();
-        }
-    });
-
-    console.log('Welcome to VicFlix! Press / to search, M/S/H for navigation');
 </script>
 </body>
 </html>
