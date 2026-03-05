@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Working Movie & Music Search</title>
+    <title>NickFlix - Movies & Music + Framework Tutorial</title>
     <style>
         * {
             margin: 0;
@@ -295,34 +295,197 @@
             border-radius: 20px;
         }
 
-        .song-card audio::-webkit-media-controls-panel {
+        .tutorial-section {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 40px;
+            border: 1px solid #333;
+        }
+
+        .tutorial-title {
+            color: #e50914;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .framework-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .framework-tab {
+            padding: 12px 25px;
+            border-radius: 30px;
+            background: #2a2a2a;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .framework-tab.react { border-color: #61dafb; }
+        .framework-tab.vue { border-color: #42b883; }
+        .framework-tab.angular { border-color: #dd0031; }
+        .framework-tab.lifecycle { border-color: #ffd700; }
+        .framework-tab.rendering { border-color: #e50914; }
+
+        .framework-tab:hover, .framework-tab.active {
+            background: #3a3a3a;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .framework-content {
+            display: none;
+            background: #222;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid;
+        }
+
+        .framework-content.react { border-left-color: #61dafb; }
+        .framework-content.vue { border-left-color: #42b883; }
+        .framework-content.angular { border-left-color: #dd0031; }
+        .framework-content.lifecycle { border-left-color: #ffd700; }
+        .framework-content.rendering { border-left-color: #e50914; }
+
+        .framework-content.active {
+            display: block;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #e5e5e5;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+
+        .code-comment {
+            color: #6a9955;
+        }
+
+        .code-keyword {
+            color: #569cd6;
+        }
+
+        .code-function {
+            color: #dcdcaa;
+        }
+
+        .code-string {
+            color: #ce9178;
+        }
+
+        .demo-box {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        .demo-button:hover {
+            background: #f40612;
+        }
+
+        .demo-button.secondary {
             background: #333;
         }
 
-        .no-results {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px;
-            color: #aaa;
-            font-size: 18px;
+        .demo-button.secondary:hover {
+            background: #444;
         }
 
-        .loading {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 60px;
+        .counter-display {
+            font-size: 48px;
+            font-weight: bold;
             color: #e50914;
-            font-size: 18px;
-        }
-
-        .error-message {
-            grid-column: 1 / -1;
             text-align: center;
-            padding: 40px;
-            color: #e50914;
-            background: rgba(229, 9, 20, 0.1);
-            border-radius: 10px;
             margin: 20px 0;
+        }
+
+        .todo-list {
+            list-style: none;
+        }
+
+        .todo-item {
+            padding: 10px;
+            background: #333;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .todo-item.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .prop-card {
+            background: linear-gradient(135deg, #61dafb22, #61dafb11);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #61dafb;
+            margin: 10px 0;
+        }
+
+        .computed-demo {
+            background: #42b88322;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #42b883;
+            margin: 10px 0;
+        }
+
+        .service-demo {
+            background: #dd003122;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #dd0031;
+            margin: 10px 0;
+        }
+
+        .lifecycle-log {
+            background: #ffd70022;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ffd700;
+        }
+
+        .conditional-demo {
+            background: #e5091422;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e50914;
+            margin: 10px 0;
         }
 
         footer {
@@ -364,8 +527,9 @@
                 margin-bottom: 10px;
             }
             
-            .section {
+            .section, .tutorial-section {
                 padding: 20px;
+                margin: 20px;
             }
         }
     </style>
@@ -392,6 +556,95 @@
     <div class="hero-search">
         <input type="text" id="heroSearchInput" placeholder="What do you want to watch/listen to?" onkeyup="syncSearchInputs()" onkeypress="handleEnterKey(event)">
         <button onclick="performSearch()">Search Now</button>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h2 id="sectionTitle">🔥 Popular Movies</h2>
+        <span class="api-source" id="apiSource">Live from TMDB</span>
+    </div>
+    
+    <div class="filter-tabs">
+        <span class="filter-tab active" onclick="loadPopularMovies()">Popular Movies</span>
+        <span class="filter-tab" onclick="loadNowPlaying()">Now Playing</span>
+        <span class="filter-tab" onclick="loadTopRated()">Top Rated</span>
+        <span class="filter-tab" onclick="loadTrendingMusic()">Trending Songs</span>
+        <span class="filter-tab" onclick="loadRockMusic()">Rock Music</span>
+        <span class="filter-tab" onclick="loadPopMusic()">Pop Music</span>
+        <span class="filter-tab" onclick="loadHipHopMusic()">Hip Hop</span>
+    </div>
+    
+    <div class="content-grid" id="contentGrid">
+        <div class="loading">Loading from TMDB API...</div>
+    </div>
+</div>
+
+<!-- ============ FRAMEWORK TUTORIAL SECTION ============ -->
+<div class="tutorial-section">
+    <h2 class="tutorial-title">📚 Frontend Framework Tutorial</h2>
+    
+    <div class="framework-tabs">
+        <span class="framework-tab react active" onclick="showFramework('react')">⚛️ React: Props, State, Hooks</span>
+        <span class="framework-tab vue" onclick="showFramework('vue')">🟢 Vue: Directives, Computed</span>
+        <span class="framework-tab angular" onclick="showFramework('angular')">🔴 Angular: Components, Services</span>
+        <span class="framework-tab lifecycle" onclick="showFramework('lifecycle')">🔄 Component Lifecycle</span>
+        <span class="framework-tab rendering" onclick="showFramework('rendering')">🔀 Conditional Rendering</span>
+    </div>
+
+    <!-- React Section -->
+    <div class="framework-content react active" id="react-content">
+        <h2 style="color: #61dafb; margin-bottom: 20px;">⚛️ React: Props, State & Hooks</h2>
+        
+        <div class="demo-box">
+            <h3>🎯 Props Example - Passing Data</h3>
+            <div class="prop-card">
+                <strong style="color: #61dafb;">UserProfile Component</strong>
+                <p style="margin: 10px 0;">Name: <span style="color: white;">John Doe</span></p>
+                <p>Age: <span style="color: white;">25</span></p>
+                <p>Email: <span style="color: white;">john@example.com</span></p>
+                <small style="color: #888;">Props are read-only data passed from parent to child</small>
+            </div>
+            <div class="code-block">
+                <span class="code-comment">// Parent Component passing props</span><br>
+                &lt;<span class="code-keyword">UserProfile</span> <br>
+                &nbsp;&nbsp;<span class="code-function">name</span>=<span class="code-string">"John Doe"</span><br>
+                &nbsp;&nbsp;<span class="code-function">age</span>={25}<br>
+                &nbsp;&nbsp;<span class="code-function">email</span>=<span class="code-string">"john@example.com"</span> <br>/&gt;<br><br>
+                
+                <span class="code-comment">// Child Component receiving props</span><br>
+                <span class="code-keyword">function</span> <span class="code-function">UserProfile</span>({ name, age, email }) {<br>
+                &nbsp;&nbsp;<span class="code-keyword">return</span> (<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">div</span>&gt;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">h3</span>&gt;{name}&lt;/<span class="code-keyword">h3</span>&gt;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">p</span>&gt;Age: {age}&lt;/<span class="code-keyword">p</span>&gt;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">p</span>&gt;Email: {email}&lt;/<span class="code-keyword">p</span>&gt;<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span class="code-keyword">div</span>&gt;<br>
+                &nbsp;&nbsp;);<br>
+                }
+            </div>
+        </div>
+
+        <div class="demo-box">
+            <h3>🎯 State & Hooks Demo (useState, useEffect)</h3>
+            <div style="text-align: center;">
+                <div class="counter-display" id="react-counter">0</div>
+                <button class="demo-button" onclick="incrementReact()">➕ Increment</button>
+                <button class="demo-button secondary" onclick="decrementReact()">➖ Decrement</button>
+                <button class="demo-button secondary" onclick="resetReact()">🔄 Reset</button>
+            </div>
+            <p style="color: #61dafb; margin-top: 10px;">Last updated: <span id="react-timestamp">Never</span></p>
+            <div class="code-block">
+                <span class="code-keyword">import</span> { useState, useEffect } from <span class="code-string">'react'</span>;<br><br>
+                
+                <span class="code-keyword">function</span> <span class="code-function">Counter</span>() {<br>
+                &nbsp;&nbsp;<span class="code-comment">// useState hook for state management</span><br>
+                &nbsp;&nbsp;<span class="code-keyword">const</span> [count, setCount] = <span class="code-function">useState</span>(0);<br>
+                &nbsp;&nbsp;<span class="code-keyword">const</span> [timestamp, setTimestamp] = <span class="code-function">useState</span>(<span class="code-string">''</span>);<br><br>
+                
+                &nbsp;&nbsp;<span class="code-comment">// useEffect hook for side effects</span><br>
+                &nbsp;&nbsp;<span class="code-function">useEffect</span>(() => {<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-function">setTimestamp</span>(<span clasrch()">Search Now</button>
     </div>
 </div>
 
