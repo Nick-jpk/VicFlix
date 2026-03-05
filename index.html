@@ -1,404 +1,178 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NickFlix - Movies & Music</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+// api/index.js - Vercel serverless entry point
+const express = require('express');
+const cors = require('cors');
+const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
+const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+
+// ============ MIDDLEWARE ============
+app.use(cors());
+app.use(express.json());
+
+// ============ DATABASE SETUP ============
+// For Vercel, we need a writable location for SQLite
+const dbPath = path.join('/tmp', 'nickflix.db');
+let db;
+
+try {
+    // Check if we need to copy seed database
+    if (!fs.existsSync(dbPath)) {
+        // If you have a seed database, copy it
+        const seedPath = path.join(__dirname, '../data/seed.db');
+        if (fs.existsSync(seedPath)) {
+            fs.copyFileSync(seedPath, dbPath);
         }
+    }
+    
+    db = new Database(dbPath);
+    
+    // Create tables if they don't exist
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #141414;
-            color: white;
-            line-height: 1.6;
+        CREATE TABLE IF NOT EXISTS watchlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            movie_id INTEGER,
+            movie_title TEXT,
+            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS movie_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cache_key TEXT UNIQUE,
+            cache_data TEXT,
+            expires_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+    
+    console.log('✅ Database connected at:', dbPath);
+} catch (error) {
+    console.error('Database error:', error);
+}
+
+// ============ MIDDLEWARE: Authentication ============
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+    jwt.verify(token, process.env.JWT_SECRET || 'secret-key', (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid token' });
+        req.user = user;
+        next();
+    });
+};
+
+// ============ API ROUTES ============
+const TMDB_API_KEY = process.env.TMDB_API_KEY || '5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e';
+const axios = require('axios');
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.VERCEL_ENV || 'development'
+    });
+});
+
+// Movies endpoint
+app.get('/api/movies/popular', async (req, res) => {
+    try {
+        const response = await axios.get(
+            `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}`
+        );
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch movies' });
+    }
+});
+
+// Search movies
+app.get('/api/movies/search', async (req, res) => {
+    const { query } = req.query;
+    try {
+        const response = await axios.get(
+            `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
+        );
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Search failed' });
+    }
+});
+
+// User registration
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        const stmt = db.prepare('INSERT INTO users (username, email, password) VALUES (?, ?, ?)');
+        const result = stmt.run(username, email, hashedPassword);
+        
+        const token = jwt.sign(
+            { id: result.lastInsertRowid, username },
+            process.env.JWT_SECRET || 'secret-key'
+        );
+        
+        res.json({ success: true, token, user: { id: result.lastInsertRowid, username, email } });
+    } catch (error) {
+        res.status(400).json({ error: 'User already exists' });
+    }
+});
+
+// User login
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const stmt = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?');
+        const user = stmt.get(username, username);
+        
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
+        
+        const token = jwt.sign(
+            { id: user.id, username: user.username },
+            process.env.JWT_SECRET || 'secret-key'
+        );
+        
+        res.json({ success: true, token, user: { id: user.id, username: user.username, email: user.email } });
+    } catch (error) {
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
 
-        /* Header */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            background: #000;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+// Watchlist endpoints
+app.get('/api/watchlist', authenticateToken, (req, res) => {
+    const stmt = db.prepare('SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC');
+    const watchlist = stmt.all(req.user.id);
+    res.json(watchlist);
+});
 
-        .logo {
-            font-size: 28px;
-            color: #e50914;
-            font-weight: bold;
-            cursor: pointer;
-        }
+app.post('/api/watchlist', authenticateToken, (req, res) => {
+    const { movie_id, movie_title } = req.body;
+    const stmt = db.prepare('INSERT INTO watchlist (user_id, movie_id, movie_title) VALUES (?, ?, ?)');
+    const result = stmt.run(req.user.id, movie_id, movie_title);
+    res.json({ success: true, id: result.lastInsertRowid });
+});
 
-        .nav {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .nav a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-
-        .nav a:hover {
-            background: #e50914;
-        }
-
-        .search-bar {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            background: rgba(255,255,255,0.15);
-            color: white;
-            width: 250px;
-            font-size: 14px;
-        }
-
-        .search-bar:focus {
-            outline: none;
-            background: rgba(255,255,255,0.25);
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #e50914;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #f40612;
-            transform: scale(1.05);
-        }
-
-        .btn-secondary {
-            background: #333;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #444;
-        }
-
-        /* Hero Section */
-        .hero {
-            height: 400px;
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                        url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920') center/cover;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 60px;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: #e5e5e5;
-            margin-bottom: 20px;
-        }
-
-        .hero-search {
-            display: flex;
-            max-width: 600px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50px;
-            padding: 5px;
-            border: 1px solid #444;
-        }
-
-        .hero-search input {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            background: transparent;
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
-
-        .hero-search button {
-            padding: 10px 25px;
-            border-radius: 50px;
-            background: #e50914;
-            color: white;
-            border: none;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* Content Section */
-        .section {
-            padding: 30px 40px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .section-header h2 {
-            font-size: 24px;
-            border-left: 4px solid #e50914;
-            padding-left: 15px;
-        }
-
-        .api-source {
-            color: #1db954;
-            font-size: 13px;
-            background: rgba(29,185,84,0.1);
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        /* Filter Tabs */
-        .filter-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .filter-tab {
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: #2a2a2a;
-            color: white;
-            cursor: pointer;
-            font-size: 13px;
-            border: 1px solid #444;
-            transition: all 0.3s;
-        }
-
-        .filter-tab:hover,
-        .filter-tab.active {
-            background: #e50914;
-            border-color: #e50914;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 25px;
-        }
-
-        .movie-card {
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .movie-card:hover {
-            transform: scale(1.05);
-        }
-
-        .movie-card img {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        .movie-card .title {
-            margin-top: 8px;
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        .movie-card .year {
-            color: #aaa;
-            font-size: 13px;
-        }
-
-        /* Song Card */
-        .song-card {
-            background: #1f1f1f;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .song-card .song-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .song-card .artist {
-            color: #1db954;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .song-card audio {
-            width: 100%;
-            height: 36px;
-        }
-
-        /* Tutorial Section */
-        .tutorial-section {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 30px;
-            margin: 20px 40px;
-        }
-
-        .tutorial-title {
-            color: #e50914;
-            font-size: 28px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .framework-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .framework-tab {
-            padding: 8px 20px;
-            border-radius: 25px;
-            background: #2a2a2a;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            border: 2px solid transparent;
-        }
-
-        .framework-tab.react { border-color: #61dafb; color: #61dafb; }
-        .framework-tab.vue { border-color: #42b883; color: #42b883; }
-        .framework-tab.angular { border-color: #dd0031; color: #dd0031; }
-        .framework-tab.lifecycle { border-color: #ffd700; color: #ffd700; }
-        .framework-tab.rendering { border-color: #e50914; color: #e50914; }
-
-        .framework-tab:hover {
-            background: #3a3a3a;
-        }
-
-        .framework-content {
-            display: none;
-            background: #222;
-            border-radius: 10px;
-            padding: 25px;
-            border-left: 4px solid;
-        }
-
-        .framework-content.active {
-            display: block;
-        }
-
-        .framework-content.react { border-left-color: #61dafb; }
-        .framework-content.vue { border-left-color: #42b883; }
-        .framework-content.angular { border-left-color: #dd0031; }
-        .framework-content.lifecycle { border-left-color: #ffd700; }
-        .framework-content.rendering { border-left-color: #e50914; }
-
-        /* Code Blocks */
-        .code-block {
-            background: #2d2d2d;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            margin: 15px 0;
-        }
-
-        .code-comment { color: #6a9955; }
-        .code-keyword { color: #569cd6; }
-        .code-function { color: #dcdcaa; }
-        .code-string { color: #ce9178; }
-
-        .demo-box {
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-        }
-
-        .prop-card {
-            background: rgba(97, 218, 251, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #61dafb;
-        }
-
-        .computed-demo {
-            background: rgba(66, 184, 131, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #42b883;
-            margin: 10px 0;
-        }
-
-        .service-demo {
-            background: rgba(221, 0, 49, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #dd0031;
-        }
-
-        .conditional-demo {
-            background: rgba(229, 9, 20, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #e50914;
-            margin: 10px 0;
-        }
-
-        .lifecycle-log {
-            background: #2d2d2d;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            height: 120px;
-            overflow-y: auto;
-            border: 1px solid #ffd700;
-        }
-
-        .loading {
-            text-align: center;
+// ============ EXPORT FOR VERCEL ============
+module.exports = app;nter;
             padding: 40px;
             color: #e50914;
         }
