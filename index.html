@@ -1,178 +1,262 @@
-// api/index.js - Vercel serverless entry point
-const express = require('express');
-const cors = require('cors');
-const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
-
-const app = express();
-
-// ============ MIDDLEWARE ============
-app.use(cors());
-app.use(express.json());
-
-// ============ DATABASE SETUP ============
-// For Vercel, we need a writable location for SQLite
-const dbPath = path.join('/tmp', 'nickflix.db');
-let db;
-
-try {
-    // Check if we need to copy seed database
-    if (!fs.existsSync(dbPath)) {
-        // If you have a seed database, copy it
-        const seedPath = path.join(__dirname, '../data/seed.db');
-        if (fs.existsSync(seedPath)) {
-            fs.copyFileSync(seedPath, dbPath);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VicFlix - Movies & Music</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    }
-    
-    db = new Database(dbPath);
-    
-    // Create tables if they don't exist
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            password TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
 
-        CREATE TABLE IF NOT EXISTS watchlist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            movie_id INTEGER,
-            movie_title TEXT,
-            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS movie_cache (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cache_key TEXT UNIQUE,
-            cache_data TEXT,
-            expires_at DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-    
-    console.log('✅ Database connected at:', dbPath);
-} catch (error) {
-    console.error('Database error:', error);
-}
-
-// ============ MIDDLEWARE: Authentication ============
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.status(401).json({ error: 'Authentication required' });
-
-    jwt.verify(token, process.env.JWT_SECRET || 'secret-key', (err, user) => {
-        if (err) return res.status(403).json({ error: 'Invalid token' });
-        req.user = user;
-        next();
-    });
-};
-
-// ============ API ROUTES ============
-const TMDB_API_KEY = process.env.TMDB_API_KEY || '5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e';
-const axios = require('axios');
-
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        environment: process.env.VERCEL_ENV || 'development'
-    });
-});
-
-// Movies endpoint
-app.get('/api/movies/popular', async (req, res) => {
-    try {
-        const response = await axios.get(
-            `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}`
-        );
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch movies' });
-    }
-});
-
-// Search movies
-app.get('/api/movies/search', async (req, res) => {
-    const { query } = req.query;
-    try {
-        const response = await axios.get(
-            `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`
-        );
-        res.json(response.data);
-    } catch (error) {
-        res.status(500).json({ error: 'Search failed' });
-    }
-});
-
-// User registration
-app.post('/api/register', async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        const stmt = db.prepare('INSERT INTO users (username, email, password) VALUES (?, ?, ?)');
-        const result = stmt.run(username, email, hashedPassword);
-        
-        const token = jwt.sign(
-            { id: result.lastInsertRowid, username },
-            process.env.JWT_SECRET || 'secret-key'
-        );
-        
-        res.json({ success: true, token, user: { id: result.lastInsertRowid, username, email } });
-    } catch (error) {
-        res.status(400).json({ error: 'User already exists' });
-    }
-});
-
-// User login
-app.post('/api/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const stmt = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?');
-        const user = stmt.get(username, username);
-        
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #141414;
+            color: white;
         }
-        
-        const token = jwt.sign(
-            { id: user.id, username: user.username },
-            process.env.JWT_SECRET || 'secret-key'
-        );
-        
-        res.json({ success: true, token, user: { id: user.id, username: user.username, email: user.email } });
-    } catch (error) {
-        res.status(500).json({ error: 'Login failed' });
-    }
-});
 
-// Watchlist endpoints
-app.get('/api/watchlist', authenticateToken, (req, res) => {
-    const stmt = db.prepare('SELECT * FROM watchlist WHERE user_id = ? ORDER BY added_at DESC');
-    const watchlist = stmt.all(req.user.id);
-    res.json(watchlist);
-});
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: #000;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
 
-app.post('/api/watchlist', authenticateToken, (req, res) => {
-    const { movie_id, movie_title } = req.body;
-    const stmt = db.prepare('INSERT INTO watchlist (user_id, movie_id, movie_title) VALUES (?, ?, ?)');
-    const result = stmt.run(req.user.id, movie_id, movie_title);
-    res.json({ success: true, id: result.lastInsertRowid });
-});
+        .logo {
+            font-size: 28px;
+            color: #e50914;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-// ============ EXPORT FOR VERCEL ============
-module.exports = app;nter;
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        .nav a:hover {
+            background: #e50914;
+        }
+
+        .search-bar {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            width: 250px;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            background: rgba(255,255,255,0.25);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            background: #e50914;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #333;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 350px;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920') center/cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 40px;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #e5e5e5;
+            margin-bottom: 20px;
+        }
+
+        .hero-search {
+            display: flex;
+            max-width: 600px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50px;
+            padding: 5px;
+            border: 1px solid #444;
+        }
+
+        .hero-search input {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .hero-search button {
+            padding: 10px 25px;
+            border-radius: 50px;
+            background: #e50914;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .section {
+            padding: 30px 40px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .section-header h2 {
+            font-size: 24px;
+            border-left: 4px solid #e50914;
+            padding-left: 15px;
+        }
+
+        .api-source {
+            color: #1db954;
+            font-size: 13px;
+            background: rgba(29,185,84,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: #2a2a2a;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            border: 1px solid #444;
+        }
+
+        .filter-tab:hover,
+        .filter-tab.active {
+            background: #e50914;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+        }
+
+        .movie-card {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .movie-card .title {
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .movie-card .year {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .song-card {
+            background: #1f1f1f;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .song-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .song-card .song-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .song-card .artist {
+            color: #1db954;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .song-card audio {
+            width: 100%;
+            height: 36px;
+        }
+
+        .loading {
+            text-align: center;
             padding: 40px;
             color: #e50914;
         }
@@ -189,10 +273,8 @@ module.exports = app;nter;
             background: #000;
             margin-top: 40px;
             color: #777;
-            font-size: 14px;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -211,7 +293,6 @@ module.exports = app;nter;
             .hero {
                 padding: 20px;
                 height: auto;
-                min-height: 350px;
             }
 
             .hero h1 {
@@ -229,10 +310,8 @@ module.exports = app;nter;
                 margin-bottom: 10px;
             }
 
-            .section,
-            .tutorial-section {
+            .section {
                 padding: 20px;
-                margin: 10px;
             }
         }
     </style>
@@ -240,19 +319,14 @@ module.exports = app;nter;
 <body>
 
 <header>
-    <div class="logo" onclick="window.location.reload()">NICKFLIX</div>
+    <div class="logo" onclick="window.location.reload()">VICFLIX</div>
     <div class="nav">
         <a href="#" onclick="loadMovies()">Movies</a>
         <a href="#" onclick="loadMusic()">Music</a>
-        <a href="#" onclick="loadWatchlist()">My Watchlist</a>
         <input type="text" class="search-bar" id="searchInput" placeholder="Search movies..." onkeypress="handleSearch(event)">
-        <div class="auth-buttons" id="authButtons">
-            <button class="btn btn-primary" onclick="showModal('loginModal')">Login</button>
-            <button class="btn btn-secondary" onclick="showModal('registerModal')">Register</button>
-        </div>
-        <div class="auth-buttons" id="userMenu" style="display: none;">
-            <span style="color: #e50914; margin-right: 10px;" id="usernameDisplay"></span>
-            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        <div class="auth-buttons">
+            <button class="btn" onclick="showLoginModal()">Login</button>
+            <button class="btn btn-secondary" onclick="showRegisterModal()">Register</button>
         </div>
     </div>
 </header>
@@ -262,7 +336,7 @@ module.exports = app;nter;
     <p>Try searching: "Inception", "The Weeknd", "action", "pop", "Bollywood"</p>
     <div class="hero-search">
         <input type="text" id="heroSearchInput" placeholder="What do you want to search?" onkeypress="handleHeroSearch(event)">
-        <button onclick="performSearch()">Search Now</button>
+        <button onclick="performSearch()">Search</button>
     </div>
 </div>
 
@@ -279,7 +353,6 @@ module.exports = app;nter;
         <span class="filter-tab" onclick="loadTrendingMusic()">Trending Songs</span>
         <span class="filter-tab" onclick="loadRockMusic()">Rock Music</span>
         <span class="filter-tab" onclick="loadPopMusic()">Pop Music</span>
-        <span class="filter-tab" onclick="loadHipHopMusic()">Hip Hop</span>
     </div>
     
     <div class="content-grid" id="contentGrid">
@@ -287,254 +360,31 @@ module.exports = app;nter;
     </div>
 </div>
 
-<!-- Tutorial Section -->
-<div class="tutorial-section">
-    <h2 class="tutorial-title">Frontend Framework Tutorial</h2>
-    
-    <div class="framework-tabs">
-        <span class="framework-tab react active" onclick="showFramework('react')">React.js</span>
-        <span class="framework-tab vue" onclick="showFramework('vue')">Vue Directives</span>
-        <span class="framework-tab angular" onclick="showFramework('angular')">Angular Components</span>
-        <span class="framework-tab lifecycle" onclick="showFramework('lifecycle')">Lifecycle</span>
-        <span class="framework-tab rendering" onclick="showFramework('rendering')">Conditional Rendering</span>
-    </div>
-
-    <!-- React Section -->
-    <div class="framework-content react active" id="react-content">
-        <h3 style="color: #61dafb; margin-bottom: 15px;">⚛️ React: Props, State & Hooks</h3>
-        
-        <div class="demo-box">
-            <h4>Props Example - Passing Data</h4>
-            <div class="prop-card">
-                <p><strong>UserProfile Component</strong></p>
-                <p>Name: John Doe</p>
-                <p>Age: 25</p>
-                <p>Email: john@example.com</p>
-                <small style="color: #888;">Props are read-only data passed from parent to child</small>
-            </div>
-            <div class="code-block">
-                <span class="code-comment">// Parent Component passing props</span><br>
-                &lt;<span class="code-keyword">UserProfile</span> <br>
-                &nbsp;&nbsp;<span class="code-function">name</span>=<span class="code-string">"John Doe"</span><br>
-                &nbsp;&nbsp;<span class="code-function">age</span>={25}<br>
-                &nbsp;&nbsp;<span class="code-function">email</span>=<span class="code-string">"john@example.com"</span> <br>/&gt;<br><br>
-                
-                <span class="code-comment">// Child Component receiving props</span><br>
-                <span class="code-keyword">function</span> <span class="code-function">UserProfile</span>({ name, age, email }) {<br>
-                &nbsp;&nbsp;<span class="code-keyword">return</span> (<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">div</span>&gt;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">h3</span>&gt;{name}&lt;/<span class="code-keyword">h3</span>&gt;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">p</span>&gt;Age: {age}&lt;/<span class="code-keyword">p</span>&gt;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">p</span>&gt;Email: {email}&lt;/<span class="code-keyword">p</span>&gt;<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span class="code-keyword">div</span>&gt;<br>
-                &nbsp;&nbsp;);<br>
-                }
-            </div>
-        </div>
-
-        <div class="demo-box">
-            <h4>State & Hooks Demo (useState, useEffect)</h4>
-            <div style="text-align: center; margin: 20px 0;">
-                <div style="font-size: 36px; color: #61dafb;" id="reactCounter">0</div>
-                <button class="btn btn-primary" onclick="incrementReact()" style="margin: 5px;">+</button>
-                <button class="btn btn-secondary" onclick="decrementReact()" style="margin: 5px;">-</button>
-                <button class="btn btn-secondary" onclick="resetReact()" style="margin: 5px;">Reset</button>
-            </div>
-            <div class="code-block">
-                <span class="code-keyword">import</span> { useState, useEffect } from <span class="code-string">'react'</span>;<br><br>
-                
-                <span class="code-keyword">function</span> <span class="code-function">Counter</span>() {<br>
-                &nbsp;&nbsp;<span class="code-keyword">const</span> [count, setCount] = <span class="code-function">useState</span>(0);<br>
-                &nbsp;&nbsp;<span class="code-keyword">const</span> [timestamp, setTimestamp] = <span class="code-function">useState</span>(<span class="code-string">''</span>);<br><br>
-                
-                &nbsp;&nbsp;<span class="code-function">useEffect</span>(() => {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-function">setTimestamp</span>(<span class="code-keyword">new</span> Date().toLocaleTimeString());<br>
-                &nbsp;&nbsp;}, [count]);<br><br>
-                
-                &nbsp;&nbsp;<span class="code-keyword">return</span> (<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="code-keyword">div</span>&gt;{count}&lt;/<span class="code-keyword">div</span>&gt;<br>
-                &nbsp;&nbsp;);<br>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Vue Section -->
-    <div class="framework-content vue" id="vue-content">
-        <h3 style="color: #42b883; margin-bottom: 15px;">🟢 Vue: Directives & Computed Properties</h3>
-        
-        <div class="demo-box">
-            <h4>Vue Directives Demo</h4>
-            <div class="computed-demo">
-                <p><strong>v-model two-way binding:</strong></p>
-                <input type="text" id="vueInput" placeholder="Type something..." style="padding: 8px; width: 100%; background: #333; border: 1px solid #42b883; color: white; border-radius: 4px;">
-                <p>You typed: <span id="vueOutput" style="color: #42b883;"></span></p>
-            </div>
-            <div class="code-block">
-                <span class="code-comment">&lt;!-- Vue Template with Directives --&gt;</span><br>
-                &lt;<span class="code-keyword">input</span> <span class="code-function">v-model</span>=<span class="code-string">"message"</span>&gt;<br>
-                &lt;<span class="code-keyword">p</span>&gt;{{ message }}&lt;/<span class="code-keyword">p</span>&gt;<br><br>
-                
-                &lt;<span class="code-keyword">li</span> <span class="code-function">v-for</span>=<span class="code-string">"item in items"</span>&gt;{{ item }}&lt;/<span class="code-keyword">li</span>&gt;<br><br>
-                
-                &lt;<span class="code-keyword">p</span> <span class="code-function">v-if</span>=<span class="code-string">"isVisible"</span>&gt;Visible&lt;/<span class="code-keyword">p</span>&gt;<br>
-                &lt;<span class="code-keyword">p</span> <span class="code-function">v-else</span>&gt;Hidden&lt;/<span class="code-keyword">p</span>&gt;
-            </div>
-        </div>
-    </div>
-
-    <!-- Angular Section -->
-    <div class="framework-content angular" id="angular-content">
-        <h3 style="color: #dd0031; margin-bottom: 15px;">🔴 Angular: Components & Services</h3>
-        
-        <div class="demo-box">
-            <h4>Angular Component Structure</h4>
-            <div class="service-demo">
-                <p><strong>User Service Data:</strong></p>
-                <p>Current User: John Angular</p>
-                <p>Role: Developer</p>
-                <p>Last Login: <span id="angularTime"></span></p>
-            </div>
-            <div class="code-block">
-                <span class="code-comment">// user.service.ts</span><br>
-                <span class="code-keyword">@Injectable</span>()<br>
-                <span class="code-keyword">export class</span> <span class="code-function">UserService</span> {<br>
-                &nbsp;&nbsp;user = { name: 'John', role: 'Developer' };<br>
-                }<br><br>
-                
-                <span class="code-comment">// user.component.ts</span><br>
-                <span class="code-keyword">@Component</span>({<br>
-                &nbsp;&nbsp;selector: <span class="code-string">'app-user'</span>,<br>
-                &nbsp;&nbsp;template: <span class="code-string">'&lt;h2&gt;{{user.name}}&lt;/h2&gt;'</span><br>
-                })<br>
-                <span class="code-keyword">export class</span> <span class="code-function">UserComponent</span> {<br>
-                &nbsp;&nbsp;<span class="code-function">constructor</span>(<span class="code-keyword">private</span> userService: UserService) {}<br>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Lifecycle Section -->
-    <div class="framework-content lifecycle" id="lifecycle-content">
-        <h3 style="color: #ffd700; margin-bottom: 15px;">🔄 Component Lifecycle</h3>
-        
-        <div class="demo-box">
-            <div class="lifecycle-log" id="lifecycleLog">
-                Lifecycle events will appear here...
-            </div>
-            <button class="btn btn-primary" onclick="startLifecycle()" style="margin-top: 10px;">Start Lifecycle</button>
-            <button class="btn btn-secondary" onclick="clearLifecycle()" style="margin-top: 10px;">Clear</button>
-            
-            <div class="code-block" style="margin-top: 15px;">
-                <span class="code-comment">// React Lifecycle</span><br>
-                <span class="code-function">useEffect</span>(() => {<br>
-                &nbsp;&nbsp;<span class="code-comment">// componentDidMount</span><br>
-                &nbsp;&nbsp;<span class="code-keyword">return</span> () => {<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// componentWillUnmount</span><br>
-                &nbsp;&nbsp;};<br>
-                }, []);<br><br>
-                
-                <span class="code-comment">// Vue Lifecycle</span><br>
-                <span class="code-function">mounted</span>() { },<br>
-                <span class="code-function">updated</span>() { },<br>
-                <span class="code-function">unmounted</span>() { }<br><br>
-                
-                <span class="code-comment">// Angular Lifecycle</span><br>
-                <span class="code-function">ngOnInit</span>() { }<br>
-                <span class="code-function">ngOnDestroy</span>() { }
-            </div>
-        </div>
-    </div>
-
-    <!-- Conditional Rendering Section -->
-    <div class="framework-content rendering" id="rendering-content">
-        <h3 style="color: #e50914; margin-bottom: 15px;">🔀 Conditional Rendering</h3>
-        
-        <div class="demo-box">
-            <div class="conditional-demo">
-                <p><strong>1. Ternary Operator:</strong></p>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span>Status: <span id="statusText">Logged In</span></span>
-                    <button class="btn btn-secondary" onclick="toggleStatus()">Toggle</button>
-                </div>
-                <div id="conditionalContent" style="margin-top: 10px; padding: 10px; background: #2a2a2a; border-radius: 4px;">
-                    Welcome back, User!
-                </div>
-            </div>
-
-            <div class="code-block">
-                <span class="code-comment">// Ternary Operator</span><br>
-                {isLoggedIn ? (<br>
-                &nbsp;&nbsp;&lt;<span class="code-keyword">div</span>&gt;Welcome&lt;/<span class="code-keyword">div</span>&gt;<br>
-                ) : (<br>
-                &nbsp;&nbsp;&lt;<span class="code-keyword">button</span>&gt;Login&lt;/<span class="code-keyword">button</span>&gt;<br>
-                )}<br><br>
-                
-                <span class="code-comment">// Short-circuit (&&)</span><br>
-                {hasNotifications && (<br>
-                &nbsp;&nbsp;&lt;<span class="code-keyword">div</span>&gt;🔔 New alerts&lt;/<span class="code-keyword">div</span>&gt;<br>
-                )}<br><br>
-                
-                <span class="code-comment">// Switch for multiple conditions</span><br>
-                <span class="code-keyword">switch</span> (role) {<br>
-                &nbsp;&nbsp;<span class="code-keyword">case</span> <span class="code-string">'admin'</span>: <span class="code-keyword">return</span> &lt;<span class="code-keyword">AdminPanel</span> /&gt;;<br>
-                &nbsp;&nbsp;<span class="code-keyword">default</span>: <span class="code-keyword">return</span> &lt;<span class="code-keyword">UserView</span> /&gt;;<br>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Login Modal -->
-<div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;">
+<!-- Simple Login Modal -->
+<div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
     <div style="background: #1f1f1f; padding: 30px; border-radius: 8px; width: 90%; max-width: 400px;">
         <h3 style="margin-bottom: 20px;">Login</h3>
-        <input type="text" id="loginUsername" placeholder="Username" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 4px;">
-        <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 10px; margin-bottom: 20px; background: #333; border: 1px solid #444; color: white; border-radius: 4px;">
-        <button class="btn btn-primary" onclick="login()" style="width: 100%; margin-bottom: 10px;">Login</button>
+        <input type="text" id="loginUsername" placeholder="Username" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white;">
+        <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 10px; margin-bottom: 20px; background: #333; border: 1px solid #444; color: white;">
+        <button class="btn" onclick="login()" style="width: 100%; margin-bottom: 10px;">Login</button>
         <button class="btn btn-secondary" onclick="hideModal('loginModal')" style="width: 100%;">Cancel</button>
     </div>
 </div>
 
-<!-- Register Modal -->
-<div id="registerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;">
-    <div style="background: #1f1f1f; padding: 30px; border-radius: 8px; width: 90%; max-width: 400px;">
-        <h3 style="margin-bottom: 20px;">Register</h3>
-        <input type="text" id="regUsername" placeholder="Username" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 4px;">
-        <input type="email" id="regEmail" placeholder="Email" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 4px;">
-        <input type="password" id="regPassword" placeholder="Password" style="width: 100%; padding: 10px; margin-bottom: 20px; background: #333; border: 1px solid #444; color: white; border-radius: 4px;">
-        <button class="btn btn-primary" onclick="register()" style="width: 100%; margin-bottom: 10px;">Register</button>
-        <button class="btn btn-secondary" onclick="hideModal('registerModal')" style="width: 100%;">Cancel</button>
-    </div>
-</div>
-
 <footer>
-    <p>© 2024 NickFlix - Movie data: TMDB API | Music previews: Deezer API | All working now!</p>
+    <p>© 2024 VicFlix - Movies & Music Search</p>
 </footer>
 
 <script>
-    // API Configuration
     const TMDB_API_KEY = '5e3b7c3d5a5e5b7c3d5a5e5b7c3d5a5e';
     const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
     const DEEZER_API = 'https://api.deezer.com';
 
-    // State
-    let currentUser = null;
-    let reactCount = 0;
-
-    // ============ INITIALIZATION ============
     window.onload = function() {
         loadMovies();
-        updateAngularTime();
-        setInterval(updateAngularTime, 1000);
-        
-        // Vue demo
-        document.getElementById('vueInput').addEventListener('input', function(e) {
-            document.getElementById('vueOutput').textContent = e.target.value || '...';
-        });
     };
 
-    // ============ CONTENT LOADING ============
+    // ============ MOVIE FUNCTIONS ============
     async function loadMovies() {
         showLoading();
         document.getElementById('sectionTitle').textContent = 'Popular Movies';
@@ -578,6 +428,24 @@ module.exports = app;nter;
         }
     }
 
+    function displayMovies(movies) {
+        const grid = document.getElementById('contentGrid');
+        let html = '';
+
+        movies.forEach(movie => {
+            html += `
+                <div class="movie-card" onclick="playTrailer('${movie.title.replace(/'/g, "\\'")}')">
+                    <img src="${TMDB_IMAGE_BASE}${movie.poster_path}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/500x750?text=No+Poster'">
+                    <div class="title">${movie.title}</div>
+                    <div class="year">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</div>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    // ============ MUSIC FUNCTIONS ============
     async function loadTrendingMusic() {
         showLoading();
         document.getElementById('sectionTitle').textContent = 'Trending Songs';
@@ -621,35 +489,8 @@ module.exports = app;nter;
         }
     }
 
-    async function loadHipHopMusic() {
-        showLoading();
-        document.getElementById('sectionTitle').textContent = 'Hip Hop Music';
-        updateActiveTab('Hip Hop');
-
-        try {
-            const response = await fetch(`${DEEZER_API}/search?q=hip%20hop&limit=20`);
-            const data = await response.json();
-            displayMusic(data.data);
-        } catch (error) {
-            loadTrendingMusic();
-        }
-    }
-
-    function displayMovies(movies) {
-        const grid = document.getElementById('contentGrid');
-        let html = '';
-
-        movies.forEach(movie => {
-            html += `
-                <div class="movie-card" onclick="playTrailer('${movie.title.replace(/'/g, "\\'")}')">
-                    <img src="${TMDB_IMAGE_BASE}${movie.poster_path}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/500x750?text=No+Poster'">
-                    <div class="title">${movie.title}</div>
-                    <div class="year">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</div>
-                </div>
-            `;
-        });
-
-        grid.innerHTML = html;
+    function loadMusic() {
+        loadTrendingMusic();
     }
 
     function displayMusic(tracks) {
@@ -659,7 +500,7 @@ module.exports = app;nter;
         tracks.forEach(track => {
             html += `
                 <div class="song-card">
-                    <img src="${track.album.cover_medium}" alt="${track.title}" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;">
+                    <img src="${track.album.cover_medium}" alt="${track.title}">
                     <div class="song-title">${track.title}</div>
                     <div class="artist">${track.artist.name}</div>
                     <audio controls preload="none">
@@ -675,6 +516,7 @@ module.exports = app;nter;
     // ============ SEARCH ============
     function handleSearch(event) {
         if (event.key === 'Enter') {
+            document.getElementById('heroSearchInput').value = event.target.value;
             performSearch();
         }
     }
@@ -705,7 +547,6 @@ module.exports = app;nter;
             const grid = document.getElementById('contentGrid');
             let html = '';
 
-            // Add movies
             moviesData.results.slice(0, 10).forEach(movie => {
                 html += `
                     <div class="movie-card" onclick="playTrailer('${movie.title.replace(/'/g, "\\'")}')">
@@ -716,12 +557,11 @@ module.exports = app;nter;
                 `;
             });
 
-            // Add songs
             if (musicData.data) {
                 musicData.data.slice(0, 10).forEach(track => {
                     html += `
                         <div class="song-card">
-                            <img src="${track.album.cover_medium}" alt="${track.title}" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;">
+                            <img src="${track.album.cover_medium}" alt="${track.title}">
                             <div class="song-title">${track.title}</div>
                             <div class="artist">${track.artist.name}</div>
                             <audio controls preload="none">
@@ -760,9 +600,9 @@ module.exports = app;nter;
         });
     }
 
-    // ============ AUTH ============
-    function showModal(modalId) {
-        document.getElementById(modalId).style.display = 'flex';
+    // ============ MODAL FUNCTIONS ============
+    function showLoginModal() {
+        document.getElementById('loginModal').style.display = 'flex';
     }
 
     function hideModal(modalId) {
@@ -770,87 +610,12 @@ module.exports = app;nter;
     }
 
     function login() {
-        const username = document.getElementById('loginUsername').value;
-        if (username) {
-            currentUser = username;
-            document.getElementById('authButtons').style.display = 'none';
-            document.getElementById('userMenu').style.display = 'flex';
-            document.getElementById('usernameDisplay').textContent = username;
-            hideModal('loginModal');
-        }
+        alert('Login functionality would connect to your backend');
+        hideModal('loginModal');
     }
 
-    function register() {
-        const username = document.getElementById('regUsername').value;
-        if (username) {
-            currentUser = username;
-            document.getElementById('authButtons').style.display = 'none';
-            document.getElementById('userMenu').style.display = 'flex';
-            document.getElementById('usernameDisplay').textContent = username;
-            hideModal('registerModal');
-        }
-    }
-
-    function logout() {
-        currentUser = null;
-        document.getElementById('authButtons').style.display = 'flex';
-        document.getElementById('userMenu').style.display = 'none';
-    }
-
-    function loadWatchlist() {
-        if (!currentUser) {
-            alert('Please login to view watchlist');
-            return;
-        }
-        document.getElementById('contentGrid').innerHTML = '<div class="no-results">Your watchlist is empty</div>';
-    }
-
-    // ============ TUTORIAL FUNCTIONS ============
-    function showFramework(framework) {
-        document.querySelectorAll('.framework-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.framework-tab').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(`${framework}-content`).classList.add('active');
-        event.target.classList.add('active');
-    }
-
-    function incrementReact() {
-        reactCount++;
-        document.getElementById('reactCounter').textContent = reactCount;
-    }
-
-    function decrementReact() {
-        reactCount--;
-        document.getElementById('reactCounter').textContent = reactCount;
-    }
-
-    function resetReact() {
-        reactCount = 0;
-        document.getElementById('reactCounter').textContent = reactCount;
-    }
-
-    function updateAngularTime() {
-        document.getElementById('angularTime').textContent = new Date().toLocaleTimeString();
-    }
-
-    function startLifecycle() {
-        const log = document.getElementById('lifecycleLog');
-        log.innerHTML = '';
-        log.innerHTML += `[${new Date().toLocaleTimeString()}] componentWillMount\n`;
-        setTimeout(() => log.innerHTML += `[${new Date().toLocaleTimeString()}] componentDidMount\n`, 100);
-        setTimeout(() => log.innerHTML += `[${new Date().toLocaleTimeString()}] componentDidUpdate\n`, 500);
-        setTimeout(() => log.innerHTML += `[${new Date().toLocaleTimeString()}] componentWillUnmount\n`, 1000);
-    }
-
-    function clearLifecycle() {
-        document.getElementById('lifecycleLog').innerHTML = 'Lifecycle events will appear here...';
-    }
-
-    function toggleStatus() {
-        const isLoggedIn = document.getElementById('statusText').textContent === 'Logged In';
-        document.getElementById('statusText').textContent = isLoggedIn ? 'Logged Out' : 'Logged In';
-        document.getElementById('conditionalContent').innerHTML = isLoggedIn ? 
-            'Please log in to continue' : 'Welcome back, User!';
+    function showRegisterModal() {
+        alert('Registration would connect to your backend');
     }
 </script>
 </body>
